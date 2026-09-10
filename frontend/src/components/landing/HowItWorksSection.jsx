@@ -445,7 +445,32 @@ function HowItWorksSection() {
                   '--card-z': `${50 + index}`,
                   transform: `translate3d(0, ${translateY}%, 0) scale(${scale})`,
                   opacity,
-                  pointerEvents: index === Math.floor(progress + 0.2) ? 'auto' : 'none',
+                  // Was `index === Math.floor(progress + 0.2)` -- only ever
+                  // one card interactive at a time, and it handed
+                  // interactivity to the *incoming* card a fifth of the way
+                  // through the crossfade, before it had covered more than
+                  // ~20% of the stage. That left the outgoing card fully
+                  // visible (translateY 0, opacity 1) but pointer-events:
+                  // none for the rest of the transition -- on mobile this
+                  // is exactly the "Build my profile" bug: scroll far
+                  // enough into card 1 (as little as ~80% of one screen
+                  // height, easy to overshoot with a normal scroll/flick)
+                  // and it goes completely inert -- no internal scroll, no
+                  // visible change, because touches on it were no longer
+                  // being delivered anywhere.
+                  //
+                  // A card should stay interactive for its entire actual
+                  // on-stage lifetime, which `localProgress` (computed
+                  // above) already tracks: it's the resting card while
+                  // localProgress is in [0, 1), and it's the incoming card
+                  // sliding into place while localProgress is in (-1, 0).
+                  // Both can legitimately be interactive at once during the
+                  // overlap -- normal stacking (the higher z-index card is
+                  // painted on top) already routes a touch/click to
+                  // whichever one is actually visible at that point, so
+                  // there's no need to artificially restrict it to a single
+                  // index.
+                  pointerEvents: Math.abs(localProgress) < 1 ? 'auto' : 'none',
                 }
 
                 return (
