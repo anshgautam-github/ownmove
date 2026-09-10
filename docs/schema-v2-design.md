@@ -1,0 +1,265 @@
+# Schema v2 — AI-readiness review
+
+Review of the current Postgres schema (`supabase/schema/001–003.sql`) against
+the long-term plan: FastAPI backend, AI profile analysis, recommendations,
+vector search, RAG, career roadmap, career simulation, and AI chat. The
+changes below are additive migrations — `004` through `011` — plus RLS and
+storage-policy files. Nothing existing is renamed, retyped, or dropped,
+except two corrections to bring this repo in line with edits made directly
+on the live tables — see [Reconciling with the live schema](#reconciling-with-the-live-schema).
+
+## ER diagram
+
+See [`schema-v2-erd.mermaid`](./schema-v2-erd.mermaid) for the full diagram.
+New tables and columns are marked `NEW`.
+
+```
+auth.users ──1:1── profiles ──1:N── experiences
+                 │
+                 ├──1:0/1── profile_embeddings   (NEW)
+                 └──1:N──── profile_insights     (NEW)
+
+opportunities ──1:N── saved_opportunities ──N:1── auth.users
+     │
+     ├──1:0/1── opportunity_embeddings  (NEW)
+     ├──1:N──── recommendations ────────N:1── auth.users   (NEW)
+     └──1:N──── interaction_events ─────N:1── auth.users   (NEW)
+```
+
+## Design philosophy
+
+Three rules drove every decision:
+
+1. **Transactional data and AI-derived data live in different tables.**
+   `profiles` and `opportunities` are edited by users and curators and read
+   on every page load. AI output (embeddings, insights, recommendations) is
+   written by background jobs on its own schedule and read only by the
+   backend or a single dashboard widget. Mixing them means a nightly
+   re-embed job locks the same row a user is trying to save their profile
+   to, and means every ordinary CRUD scan of `profiles` drags 6KB of vector
+   data behind it for free.
+2. **History matters where it's a product signal, is discarded where it's
+   just noise.** A profile's "strengths and gaps" from an analysis run three
+   months ago is evidence of growth — kept (`profile_insights` is
+   append-only). A cached recommendation score from three months ago is just
+   wrong — overwritten (`recommendations` is one row per user+opportunity).
+3. **Cascade rules are chosen per relationship, not applied uniformly.** A
+   recommendation is meaningless without its opportunity (`on delete
+   cascade`). An interaction event is an audit trail — if the opportunity is
+   later removed, the fact that a user viewed *something* that day should
+   survive (`on delete set null`).
+
+## What changed, and why
+
+### `profiles` (`004_profiles_v2.sql`)
+
+| Column | Type | Why |
+| --- | --- | --- |
+| `resume_url` | `text` | Storage path to the uploaded resume. Profile analysis needs a source document beyond the onboarding form fields. |
+| `resume_text` | `text` | Backend-extracted plain text. Embeddings/RAG read this, not the PDF — avoids re-parsing on every AI call. |
+| `resume_updated_at` | `timestamptz` | Lets the embedding job diff against `profile_embeddings.updated_at` to know if a re-embed is due. |
+| `onboarding_completed` | `boolean` | Recommendations shouldn't run against a half-filled profile. Backfilled from `submitted_at is not null` for existing rows. |
+| `last_active_at` | `timestamptz` | Lets nightly jobs skip recompute for dormant users — a real cost control once the user base grows. |
+
+Nothing here touches `career_interests`/`current_skills` (still `text[]`).
+See [Considered and rejected](#considered-and-rejected) for why a normalized
+skills taxonomy is deferred, not adopted.
+
+### `opportunities` (`005_opportunities_v2.sql`)
+
+| Column | Type | Why |
+| --- | --- | --- |
+| `source` | `text`, default `'manual'` | Identifies where a row came from (manual entry vs. a named scraper/partner feed). |
+| `external_id` | `text` | Paired with `source`, the real de-dupe key for automated ingestion. The current seed file dedupes on `(title, organization)` — fragile against near-duplicate titles from a scraper. |
+| `search_vector` | `tsvector`, generated | Server-side keyword search backing the Discover search box, which today only searches whatever's already loaded client-side. |
+| `eligible_years` | `integer[]` | Added directly on the live table (`010_opportunities_v3.sql`) as the real eligibility signal — see [Reconciling with the live schema](#reconciling-with-the-live-schema). |
+| `duration` | `text` | Also added live in `010`. Free text on purpose: an internship's duration ("3 months"), a hackathon's ("48 hours"), and a program's ("Summer 2026") don't share a unit. |
+
+New indexes: a partial unique index on `(source, external_id) where
+external_id is not null` (so manual rows never collide), and GIN indexes on
+`tags`, `eligible_years`, and `search_vector`.
+
+### Embeddings — dedicated tables, not columns (`006_ai_embeddings.sql`)
+
+`profile_embeddings` and `opportunity_embeddings`, each a 1:1 shadow table
+keyed by the source row's ID. **Not** a `vector` column added to `profiles`/
+`opportunities` directly, for four reasons:
+
+1. **Lifecycle mismatch.** Embeddings are regenerated by a background job on
+   its own schedule; the source tables are edited by users/curators on
+   theirs. Separating them means the re-embed job never locks a row someone
+   is actively editing.
+2. **Model churn.** The embedding model/provider will change before the
+   underlying business data does. A dedicated table can be dropped and
+   rebuilt independently — an `ALTER TABLE profiles DROP COLUMN embedding`
+   on a live table is a much scarier operation.
+3. **Weight.** A 1536-dim vector is ~6KB per row. Every ordinary read of
+   `profiles`/`opportunities` — which happens on nearly every page load —
+   would otherwise carry that weight for no benefit.
+4. **Index isolation.** The HNSW index has its own build/maintenance cost.
+   On a narrow, backend-only table, rebuilding it never contends with writes
+   on the wide, frequently-updated source tables.
+
+Each table stores `model` + `model_version` (so you can tell which
+embeddings came from which model generation) and `source_hash` (so the
+regeneration job can skip rows whose source content hasn't actually
+changed). Indexed with `hnsw (embedding vector_cosine_ops)` — cosine
+distance is standard for normalized text embeddings; switch the ops class if
+a future model expects inner product or L2.
+
+**Dimension is locked at 1536**, which assumes an OpenAI-family embedding
+model. This must be decided before running `006` — pgvector fixes the
+dimension per column, so changing models later means a new column or table,
+not an `ALTER`.
+
+### `profile_insights` (`007_ai_profile_insights.sql`)
+
+Backs the "AI Profile Analysis" feature. One row per analysis run
+(`completion_score`, `strengths`, `gaps`, `recommended_focus_areas`,
+`summary`), not one row per profile — see [Design philosophy](#design-philosophy)
+on why history is kept here. Indexed on `(profile_id, generated_at desc)`,
+since "this profile's latest analysis" is the only read pattern that
+matters on a hot path.
+
+### `recommendations` and `interaction_events` (`008_recommendations_events.sql`)
+
+Two different shapes for two different jobs:
+
+- **`recommendations`** is the materialized "current best guess" — one row
+  per `(user_id, opportunity_id)` via a unique constraint, upserted in
+  place. It's what the "For You" feed reads. `score numeric(5,4)` constrained
+  to `[0, 1]`, plus a `reasons jsonb` array for explainability
+  ("matches your interest in ML", "deadline in 5 days").
+- **`interaction_events`** is an append-only log (`view`, `click`, `save`,
+  `unsave`, `apply`, `dismiss`) — the actual feedback signal a
+  recommendation model gets trained/evaluated against. `opportunity_id` is
+  nullable with `on delete set null`, not `cascade`: removing a stale
+  listing shouldn't erase the historical fact that a user interacted with
+  it.
+
+## Row Level Security (`policies/002_rls_ai.sql`)
+
+| Table | Client can read own rows? | Client can write? |
+| --- | --- | --- |
+| `profile_embeddings` | No | No — service-role only |
+| `opportunity_embeddings` | No | No — service-role only |
+| `profile_insights` | Yes (`profile_id = auth.uid()`) | No — service-role only |
+| `recommendations` | Yes (`user_id = auth.uid()`) | No — service-role only |
+| `interaction_events` | No (write-only from the client) | Insert own rows only |
+
+Embeddings have no `authenticated` policy at all — RLS enabled with zero
+policies means default-deny, so they're unreachable from the browser without
+needing an explicit "deny everything" rule. `interaction_events` intentionally
+has no `select` policy for `authenticated`: an event log the actor can read
+and reconstruct isn't a meaningfully more honest signal than one they can't,
+but keeping it write-only removes any temptation to build client behavior
+that depends on reading it back.
+
+## Migration strategy
+
+1. **Apply in order, same convention as today.** Run `004` → `011`, plus
+   `policies/002_rls_ai.sql` and `policies/003_storage_resumes.sql`, via the
+   Supabase SQL editor or CLI — same idempotent style (`if not exists`,
+   `drop policy if exists`) already used in `001`–`003`, so re-running is
+   always safe. Full order is in `supabase/README.md`.
+2. **No backend traffic depends on these tables yet.** Every AI service in
+   `backend/app/services/` is currently a stub (`NotImplementedYetError`), so
+   there's no live code path to break. This is the ideal time to land the
+   schema — before any service is built against it.
+3. **`004`'s backfill is the only data-touching statement.** It sets
+   `onboarding_completed = true` for existing rows that already have a
+   `submitted_at`. Everything else is schema-only.
+4. **Embeddings tables start empty.** They won't be populated until
+   `embedding_service.py` is implemented and a backfill script runs against
+   existing profiles/opportunities. An empty `profile_embeddings` table is a
+   valid state — ANN queries just return nothing until then.
+5. **Lock the embedding model before running `006`.** The dimension is fixed
+   at the column level; changing it later isn't an `ALTER`, it's a new
+   column or table. Decide OpenAI vs. another provider first.
+6. **Going forward, never edit `001`–`011` in place.** Add a new numbered
+   file, exactly as the comment in `002_opportunities.sql` already
+   establishes for the category constraint.
+
+## Reconciling with the live schema
+
+`001_profiles.sql` and `002_opportunities.sql` were both originally
+reconstructions — the real DDL was never committed, so they were rebuilt from
+the application's data-access layer. Twice since, columns were added (and in
+one case, dropped/renamed) directly on the live tables via the Supabase
+dashboard, bypassing source control entirely. Each time, the fix was the
+same: correct the baseline file so a fresh database matches reality, and add
+a small forward migration so an environment that already ran the *old*
+baseline can catch up.
+
+- **Profiles**, first pass: `full_name`, `email`, `profile_photo`, `headline`,
+  `bio`, `city`, `country`, `profile_score`, `profile_summary`,
+  `onboarding_completed`, `last_profile_analysis`, `target_role`,
+  `target_company`, `graduation_status`, `resume_url` all existed live but
+  not in `001`. `github_username` was also corrected to the real column name,
+  `github_url`.
+- **Profiles**, second pass: `projects_worked` was dropped and
+  `profile_summary` was renamed to `ai_profile_summary` (see
+  `009_profiles_v3.sql`) — project count wasn't a useful enough signal to
+  keep, and the AI-written column needed a name that says so.
+- **Opportunities**: `eligible_years` (`integer[]`) and `duration` (`text`)
+  were added live (see `010_opportunities_v3.sql`). This also meant retiring
+  `005_opportunities_v2.sql`'s `eligibility_tags` column, which had been
+  planned but never actually applied — `eligible_years` is the real version
+  of that same idea, and a better fit for the actual signal (specific
+  graduation years, not free-text tags).
+- **Experiences**: `employment_type` was renamed to `experience_type`, and
+  `skills_used` (`text[]`) was added (see `011_experiences_v2.sql`) — a
+  per-role skill signal, finer-grained than `profiles.current_skills`, which
+  is unscoped across a person's whole history.
+
+The lesson embedded in the file comments themselves, for next time: schema
+changes made in the Supabase dashboard need a same-day follow-up commit here,
+or this drift just repeats.
+
+## Considered and rejected
+
+**Normalized `skills`/`tags` taxonomy tables.** Splitting `career_interests`,
+`current_skills`, and `opportunities.tags` into lookup tables with join
+tables would give cleaner analytics ("top requested skill across all
+users") and guard against synonym drift ("ReactJS" vs. "React"). Not done
+now: the free-text arrays are simple, already indexed with GIN, and the
+product doesn't have tag-vocabulary drift yet. Revisit once it does — see
+[Future tables](#future-tables-not-implemented).
+
+**A single `embedding` column with a `kind` discriminator** instead of two
+separate tables. Rejected: profiles and opportunities have unrelated
+lifecycles and access patterns (one is regenerated on user edit or resume
+upload, the other on curator edit or ingestion), so a shared table would need
+a `kind` filter on every query and a nullable FK to each parent — more
+complex than two small dedicated tables for no real benefit at this scale.
+
+## Future tables (not implemented)
+
+Sketched here for planning; not created by this migration set, either
+because the corresponding product surface doesn't exist yet (no chat/roadmap
+UI today — "Career AI" currently renders the same opportunity list as
+Discover) or because current scale doesn't justify them.
+
+- **`career_roadmaps`** (`id`, `user_id`, `title`, `milestones jsonb`,
+  `target_role`, `is_current boolean`, `model_version`, timestamps) — a
+  partial unique index on `user_id where is_current` would enforce "one
+  active roadmap per user" without a separate status table.
+- **`career_simulations`** (`id`, `user_id`, `roadmap_id` nullable FK,
+  `scenario_input jsonb`, `result jsonb`, `model_version`, `created_at`) —
+  "what-if" branches, optionally hung off a roadmap milestone.
+- **`chat_sessions`** / **`chat_messages`** — standard session + message-log
+  pair (`role` check constraint `user`/`assistant`/`system`, `tokens_used`),
+  needed once the AI chat assistant ships.
+- **`resumes`** (plural, versioned) — if users need resume history rather
+  than "just the latest one," promote `profiles.resume_url`/`resume_text`
+  into their own table with a `profile_id` FK and a `is_current` flag.
+- **`skills`** / **`opportunity_tags`** taxonomy + join tables — see
+  [Considered and rejected](#considered-and-rejected).
+- **`model_registry`** (`capability`, `provider`, `model`, `version`,
+  `is_active`) — a central place recording which model/version is "current"
+  per AI capability, so bumping a model doesn't require a code deploy.
+- **`notifications`** — deadline reminders, new-match alerts; no UI surface
+  for this yet.
+- **Partitioning `interaction_events` by month** — not needed at current
+  volume; revisit once the table is large enough that index maintenance or
+  retention policies become a real cost.

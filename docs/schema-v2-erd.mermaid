@@ -1,0 +1,151 @@
+%% PROFILES reflects the live table as of schema/009_profiles_v3.sql
+%% (post projects_worked removal / profile_summary -> ai_profile_summary rename).
+%% OPPORTUNITIES reflects the live table as of schema/010_opportunities_v3.sql
+%% (eligible_years/duration added; the planned eligibility_tags column was
+%% never applied and has been retired from 005_opportunities_v2.sql).
+%% EXPERIENCES reflects the live table as of schema/011_experiences_v2.sql
+%% (employment_type -> experience_type rename; skills_used added).
+erDiagram
+    AUTH_USERS ||--|| PROFILES : "id = id"
+    PROFILES ||--o{ EXPERIENCES : "profile_id"
+    PROFILES ||--o| PROFILE_EMBEDDINGS : "profile_id"
+    PROFILES ||--o{ PROFILE_INSIGHTS : "profile_id"
+    AUTH_USERS ||--o{ SAVED_OPPORTUNITIES : "user_id"
+    AUTH_USERS ||--o{ RECOMMENDATIONS : "user_id"
+    AUTH_USERS ||--o{ INTERACTION_EVENTS : "user_id"
+    OPPORTUNITIES ||--o{ SAVED_OPPORTUNITIES : "opportunity_id"
+    OPPORTUNITIES ||--o| OPPORTUNITY_EMBEDDINGS : "opportunity_id"
+    OPPORTUNITIES ||--o{ RECOMMENDATIONS : "opportunity_id"
+    OPPORTUNITIES ||--o{ INTERACTION_EVENTS : "opportunity_id (nullable)"
+
+    AUTH_USERS {
+        uuid id PK
+    }
+
+    PROFILES {
+        uuid id PK "references auth.users"
+        text full_name
+        text email
+        text profile_photo
+        text headline
+        text bio
+        text city
+        text country
+        text college_name
+        text education_level
+        text degree
+        text branch
+        text major
+        int graduation_year
+        text graduation_status
+        text_array career_interests
+        text_array current_skills
+        text target_role
+        text target_company
+        text github_url
+        text linkedin_url
+        text resume_url
+        text resume_text "NEW"
+        timestamptz resume_updated_at "NEW"
+        timestamptz last_active_at "NEW"
+        int profile_score "AI-derived"
+        text ai_profile_summary "AI-derived"
+        timestamptz last_profile_analysis "AI-derived"
+        text auth_provider
+        boolean onboarding_completed
+        timestamptz submitted_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    EXPERIENCES {
+        uuid id PK
+        uuid profile_id FK
+        text title
+        text company
+        text experience_type
+        text location
+        date start_date
+        date end_date
+        boolean currently_working
+        text description
+        text_array skills_used "NEW"
+        timestamptz created_at
+    }
+
+    OPPORTUNITIES {
+        uuid id PK
+        text category
+        text title
+        text organization
+        text logo_url
+        text description
+        text location
+        boolean is_remote
+        text apply_url
+        text_array tags
+        text source "NEW"
+        text external_id "NEW"
+        tsvector search_vector "NEW, generated"
+        int_array eligible_years "NEW"
+        text duration "NEW"
+        date application_deadline
+        timestamptz posted_at
+        boolean is_active
+    }
+
+    SAVED_OPPORTUNITIES {
+        uuid id PK
+        uuid user_id FK
+        uuid opportunity_id FK
+        timestamptz created_at
+    }
+
+    PROFILE_EMBEDDINGS {
+        uuid profile_id PK_FK "NEW table"
+        vector_1536 embedding
+        text model
+        text model_version
+        text source_hash
+        timestamptz updated_at
+    }
+
+    OPPORTUNITY_EMBEDDINGS {
+        uuid opportunity_id PK_FK "NEW table"
+        vector_1536 embedding
+        text model
+        text model_version
+        text source_hash
+        timestamptz updated_at
+    }
+
+    PROFILE_INSIGHTS {
+        uuid id PK "NEW table"
+        uuid profile_id FK
+        smallint completion_score
+        jsonb strengths
+        jsonb gaps
+        text_array recommended_focus_areas
+        text summary
+        text model_version
+        timestamptz generated_at
+    }
+
+    RECOMMENDATIONS {
+        uuid id PK "NEW table"
+        uuid user_id FK
+        uuid opportunity_id FK
+        numeric score
+        jsonb reasons
+        text model_version
+        timestamptz generated_at
+    }
+
+    INTERACTION_EVENTS {
+        uuid id PK "NEW table"
+        uuid user_id FK
+        uuid opportunity_id FK_nullable
+        text event_type
+        jsonb metadata
+        timestamptz created_at
+    }

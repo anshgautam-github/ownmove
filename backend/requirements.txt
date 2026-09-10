@@ -1,0 +1,66 @@
+# --- Web framework ---------------------------------------------------------
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+python-multipart==0.0.20
+
+# --- Config & validation ---------------------------------------------------
+pydantic==2.11.9
+pydantic-settings==2.11.0
+
+# --- Auth ------------------------------------------------------------------
+pyjwt==2.10.1
+
+# --- Supabase (Postgres / Auth / Storage) ---------------------------------
+# Floor-pinned rather than exact — supabase-py pulls in supabase_auth,
+# postgrest, realtime and storage3 as a matched set, and pinning this one
+# package to an exact patch version without pinning those too can make pip
+# resolve a mismatched combination (seen as
+# `ModuleNotFoundError: No module named 'supabase_auth.http_clients'`).
+# Letting pip pick the newest 2.x resolves the whole set together correctly.
+supabase>=2.20.0
+
+# --- HTTP ------------------------------------------------------------------
+httpx==0.28.1
+
+# --- AI: Profile Analysis (backend/app/profile_analysis) -------------------
+# LangChain gives structured, schema-validated output straight off the LLM
+# (ChatOpenAI.with_structured_output) instead of hand-parsing JSON out of a
+# free-text completion. LangGraph wraps that call in an explicit pipeline
+# (generate -> deterministic reconcile/scoring) so the raw model output is
+# never handed to the client unchecked — see
+# profile_analysis/services/generators/langgraph_generator.py.
+#
+# NOTE: exact patch versions below are pinned as of when this file was
+# written and were NOT resolved against PyPI in this environment (no network
+# access here). If `pip install -r requirements.txt` fails on a version
+# conflict, run `pip install -U langchain langchain-openai langgraph openai`
+# instead and re-freeze.
+openai==1.109.1
+langchain==0.3.27
+langchain-openai==0.2.14
+langgraph==0.2.62
+
+# --- AI: "For You" recommendations (backend/app/services/recommendation_*) -
+# Local embedding model (sentence-transformers/all-MiniLM-L6-v2, 384-dim —
+# see app/core/config.py's DEFAULT_EMBEDDING_MODEL/EMBEDDING_DIMENSIONS and
+# app/ai/embeddings/generator.py). No API key needed; this pulls in
+# PyTorch (CPU build) as a transitive dependency, which is the bulk of the
+# install size/time here — there's no lighter way to run this model
+# in-process. First use downloads the ~90MB model weights from Hugging
+# Face Hub unless EMBEDDING_MODEL_CACHE_DIR already has them cached.
+sentence-transformers==3.3.1
+
+# --- Rate limiting (app/core/rate_limiter.py) -------------------------------
+# Distributed, atomic (Lua-script) rate limiting across FastAPI workers/
+# instances — see backend/RATE_LIMITING.md. Uses the same REDIS_URL as
+# ENABLE_BACKGROUND_WORKERS below.
+redis==6.4.0
+
+# NOTE: everything below is intentionally NOT installed yet — no code uses
+# it. Uncomment as each capability lands, so the image stays small and cold
+# starts stay fast.
+#
+# anthropic==0.69.0
+# langchain-community==0.3.30
+# pgvector==0.4.1
+# psycopg[binary]==3.2.10

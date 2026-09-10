@@ -1,0 +1,13 @@
+-r requirements.txt
+
+pytest==8.4.2
+pytest-asyncio==1.2.0
+ruff==0.14.0
+
+# --- Rate limiter tests (tests/test_rate_limiter.py, test_rate_limit_api.py) -
+# In-memory, no-network Redis stand-in so the real rate-limit code path
+# (including its Lua script — see app/core/rate_limiter.py) runs against a
+# real EVAL implementation in tests, not a live Redis server. `lupa` is
+# fakeredis's Lua interpreter for script support.
+fakeredis==2.31.3
+lupa==2.5
