@@ -16,10 +16,12 @@ const mailIcon = (
 );
 
 // X and Discord dropped — only LinkedIn and email are real presences for
-// now.
+// now. Each link carries its own `href` (and `external` for the ones that
+// leave the site) rather than every icon pointing at the same placeholder
+// "/" — LinkedIn now goes to the real company page.
 const socialLinks = [
-  { label: 'LinkedIn', icon: linkedinIcon },
-  { label: 'Gmail', icon: mailIcon },
+  { label: 'LinkedIn', icon: linkedinIcon, href: 'https://www.linkedin.com/company/ownmove/', external: true },
+  { label: 'Gmail', icon: mailIcon, href: '/' },
 ]
 
 function FooterSection() {
@@ -134,7 +136,8 @@ function FooterSection() {
               {socialLinks.map((link) => (
                 <a
                   key={link.label}
-                  href="/"
+                  href={link.href}
+                  {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})}
                   aria-label={link.label}
                   className="footer-social flex h-12 w-12 items-center justify-center rounded-full border border-white/12 bg-white/6 text-white/88 backdrop-blur-md transition hover:translate-y-[-2px]"
                 >
