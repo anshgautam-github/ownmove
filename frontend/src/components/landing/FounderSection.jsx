@@ -1,4 +1,5 @@
 import React from 'react';
+import founderPhoto from '../../assets/founder.jpeg';
 
 // Renders just the "Why We Built OwnMove" content block — the shared
 // background/glow and outer section chrome now live one level up, in
@@ -39,9 +40,11 @@ function FounderSection() {
           </div>
 
           <div className="relative z-10 mt-8 flex items-center gap-3 border-t border-black/[0.06] pt-6">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(180deg,#2b2450,#15131f)] text-[0.92rem] font-semibold text-white">
-              AG
-            </div>
+            <img
+              src={founderPhoto}
+              alt="Ansh Gautam"
+              className="h-11 w-11 shrink-0 rounded-full object-cover"
+            />
             <div>
               <div className="text-[0.95rem] font-semibold tracking-tight text-[#202124]">Ansh Gautam</div>
               <div className="text-[0.82rem] text-[#6b6f7e]">Founder, OwnMove</div>

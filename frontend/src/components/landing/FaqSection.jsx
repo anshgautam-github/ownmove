@@ -93,10 +93,13 @@ function FaqSection({ preview = false }) {
                   We&apos;re here to help if there&apos;s something we haven&apos;t answered.
                 </p>
                 <div className="mt-7 flex w-full items-end justify-start">
-                  <button className="inline-flex items-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] px-5 py-3 text-[0.95rem] font-medium text-white shadow-[0_14px_28px_rgba(101,89,227,0.22)] transition hover:translate-y-[-1px] hover:shadow-[0_18px_34px_rgba(101,89,227,0.26)]">
+                  <a
+                    href="mailto:ownmovee@gmail.com"
+                    className="inline-flex items-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] px-5 py-3 text-[0.95rem] font-medium text-white shadow-[0_14px_28px_rgba(101,89,227,0.22)] transition hover:translate-y-[-1px] hover:shadow-[0_18px_34px_rgba(101,89,227,0.26)]"
+                  >
                     Contact Support
                     <span className="text-base leading-none">→</span>
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -217,10 +220,13 @@ function FaqSection({ preview = false }) {
                   We&apos;re here to help if there&apos;s something we haven&apos;t answered.
                 </p>
                 <div className="mt-7 flex w-full items-end justify-start">
-                  <button className="inline-flex items-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] px-5 py-3 text-[0.95rem] font-medium text-white shadow-[0_14px_28px_rgba(101,89,227,0.22)] transition hover:translate-y-[-1px] hover:shadow-[0_18px_34px_rgba(101,89,227,0.26)]">
+                  <a
+                    href="mailto:ownmovee@gmail.com"
+                    className="inline-flex items-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] px-5 py-3 text-[0.95rem] font-medium text-white shadow-[0_14px_28px_rgba(101,89,227,0.22)] transition hover:translate-y-[-1px] hover:shadow-[0_18px_34px_rgba(101,89,227,0.26)]"
+                  >
                     Contact Support
                     <span className="text-base leading-none">→</span>
-                  </button>
+                  </a>
                 </div>
              </div>
           </div>

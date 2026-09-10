@@ -9,19 +9,26 @@ const linkedinIcon = (
     <path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z" />
   </svg>
 );
-const mailIcon = (
-  <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor" aria-hidden="true">
-    <path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z" />
+// Real Gmail wordmark colors (not currentColor like LinkedIn) so it reads
+// as the actual Gmail icon against the dark circle background. `mailto:`
+// links don't need `external` — there's no new tab to open, just the
+// user's default mail client.
+const gmailIcon = (
+  <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
+    <path fill="#4caf50" d="M45,16.2l-5,2.75l-5,4.75L35,40h7c1.657,0,3-1.343,3-3V16.2z"></path>
+    <path fill="#1e88e5" d="M3,16.2l3.614,1.71L13,23.7V40H6c-1.657,0-3-1.343-3-3V16.2z"></path>
+    <polygon fill="#e53935" points="35,11.2 24,19.45 13,11.2 12,17 13,23.7 24,31.95 35,23.7 36,17"></polygon>
+    <path fill="#c62828" d="M3,12.298V16.2l10,7.5V11.2L9.876,8.859C9.132,8.301,8.228,8,7.298,8h0C4.924,8,3,9.924,3,12.298z"></path>
+    <path fill="#fbc02d" d="M45,12.298V16.2l-10,7.5V11.2l3.124-2.341C38.868,8.301,39.772,8,40.702,8h0 C43.076,8,45,9.924,45,12.298z"></path>
   </svg>
 );
-
-// X and Discord dropped — only LinkedIn and email are real presences for
+// X and Discord dropped — LinkedIn and Gmail are the real presence for
 // now. Each link carries its own `href` (and `external` for the ones that
 // leave the site) rather than every icon pointing at the same placeholder
-// "/" — LinkedIn now goes to the real company page.
+// "/" — LinkedIn goes to the real company page, Gmail opens a new email.
 const socialLinks = [
   { label: 'LinkedIn', icon: linkedinIcon, href: 'https://www.linkedin.com/company/ownmove/', external: true },
-  { label: 'Gmail', icon: mailIcon, href: '/' },
+  { label: 'Gmail', icon: gmailIcon, href: 'mailto:ownmovee@gmail.com' },
 ]
 
 function FooterSection() {

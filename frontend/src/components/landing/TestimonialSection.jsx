@@ -1,18 +1,5 @@
 import React from 'react';
 
-const floatingAvatars = [
-  { img: "https://images.unsplash.com/photo-1624610261655-777af2f586d7?w=100&h=100&fit=crop", style: { left: '15%', top: '25%', width: '52px' }, border: 'border-[#ff7a7a]' },
-  { img: "https://images.unsplash.com/photo-1757351122515-21a7b61d682e?w=100&h=100&fit=crop", style: { left: '4%', top: '55%', width: '64px' }, border: 'border-[#ffcc00]' },
-  { img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", style: { left: '25%', top: '75%', width: '72px' }, border: 'border-[#4a72ff]' },
-  { img: "https://images.unsplash.com/photo-1694871420433-bf111bdfae07?w=100&h=100&fit=crop", style: { left: '33%', top: '45%', width: '56px' } },
-  { img: "https://images.unsplash.com/photo-1511763508683-99dc7949e97f?w=100&h=100&fit=crop", style: { left: '48%', top: '30%', width: '60px' }, border: 'border-[#ff8c8c]' },
-  { img: "https://images.unsplash.com/photo-1575781023754-05115812f6bc?w=100&h=100&fit=crop", style: { left: '55%', top: '65%', width: '64px' }, border: 'border-[#00e5ff]' },
-  { img: "https://images.unsplash.com/photo-1624610806209-82a4cbb4339a?w=100&h=100&fit=crop", style: { left: '65%', top: '35%', width: '48px' } },
-  { img: "https://images.unsplash.com/photo-1643213199610-5cc95a244387?w=100&h=100&fit=crop", style: { left: '78%', top: '55%', width: '56px' }, border: 'border-[#ff9a9a]' },
-  { img: "https://images.unsplash.com/photo-1694871420666-d55d3649ea40?w=100&h=100&fit=crop", style: { left: '85%', top: '15%', width: '60px' }, border: 'border-[#adff2f]' },
-  { img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", style: { left: '92%', top: '45%', width: '52px' }, border: 'border-[#8e44ad]' },
-]
-
 const testimonials = [
   {
     quote: "Discover surfaced a product internship I never would have searched for myself. The match was closer to my profile than anything on the usual job boards.",
@@ -140,19 +127,6 @@ function TestimonialSection() {
             />
           ))}
         </svg>
-
-        {/* Floating Avatars */}
-        <div className="absolute top-0 inset-x-0 mx-auto max-w-[1300px] h-full pointer-events-auto">
-          {floatingAvatars.map((av, index) => (
-            <div
-              key={index}
-              className={`absolute rounded-full border-[3px] shadow-[0_0_24px_rgba(0,0,0,0.5)] ${av.border || 'border-[#161829]'}`}
-              style={av.style}
-            >
-              <img src={av.img} alt="" className="w-full h-full rounded-full object-cover" />
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Testimonials Carousel */}

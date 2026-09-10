@@ -1,4 +1,5 @@
 import React from 'react';
+import founderPhoto from '../../assets/founder.jpeg';
 
 // Real line icons (same 24x24, 1.8-2px stroke language used across the rest
 // of the app) instead of raw unicode glyphs (⟲ ◎ ⌲) — those symbols were the
@@ -77,7 +78,7 @@ function WorkAiSection() {
                 its right) instead of leaving that corner as dead air. */}
             <div className="workai-chip absolute left-[2%] top-[4%] flex items-center rounded-full px-5 py-2.5 text-[clamp(0.82rem,0.92vw,0.96rem)] font-semibold text-[#1d1d2f] z-40 transition-transform duration-300 hover:-translate-y-1">
               <img
-                src="https://images.unsplash.com/photo-1694871420433-bf111bdfae07?w=64&h=64&fit=crop"
+                src={founderPhoto}
                 alt=""
                 className="mr-2.5 h-6 w-6 shrink-0 rounded-full object-cover ring-2 ring-white/80"
               />
@@ -133,7 +134,7 @@ function WorkAiSection() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <img
-                    src="https://images.unsplash.com/photo-1694871420433-bf111bdfae07?w=64&h=64&fit=crop"
+                    src={founderPhoto}
                     alt=""
                     className="h-7 w-7 shrink-0 rounded-full object-cover ring-2 ring-white"
                   />

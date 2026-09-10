@@ -655,7 +655,7 @@ function IntelligenceSection() {
                               isThinkingOpen ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                             }`}
                           >
-                          <div className="min-h-0 overflow-hidden">
+                          <div className="min-h-0 overflow-hidden pl-3">
                             <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                               {activeContent.consideredLabel}
                             </div>
