@@ -441,6 +441,13 @@ function OnboardingScreen() {
     }
   };
 
+  // Lets someone move on without filling anything in — onboarding never
+  // wrote to the DB until this point (handleSubmit is the only writer), so
+  // skipping is just "go to the dashboard now" with nothing to undo.
+  const handleSkip = () => {
+    window.location.assign('/discover');
+  };
+
   if (isLoadingProfile) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)] text-[#131114]">
@@ -454,12 +461,36 @@ function OnboardingScreen() {
       {showCelebration && <CelebrationOverlay />}
       <section className="mx-auto flex w-full max-w-[820px] flex-col px-5 pt-12 pb-16 sm:px-8 sm:pt-20 sm:pb-24">
         {/* Header with Logo */}
-        <header className="mb-5 flex shrink-0 items-center gap-2.5">
-          <div className="relative h-5 w-5">
-            <span className="absolute left-0 top-0 h-3 w-3 border-[3px] border-black" />
-            <span className="absolute bottom-0 right-0 h-3 w-3 border-[3px] border-black bg-[#fffdf9]" />
+        <header className="mb-5 flex shrink-0 items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="relative h-5 w-5">
+              <span className="absolute left-0 top-0 h-3 w-3 border-[3px] border-black" />
+              <span className="absolute bottom-0 right-0 h-3 w-3 border-[3px] border-black bg-[#fffdf9]" />
+            </div>
+            <span className="text-base font-semibold tracking-tight text-black">OwnMove</span>
           </div>
-          <span className="text-base font-semibold tracking-tight text-black">OwnMove</span>
+
+          {/* Quiet, always-available exit from onboarding — a pill rather
+              than a plain text link so it reads as a real, tappable action
+              instead of stray copy, but kept low-contrast/outlined (vs. the
+              solid purple Continue/Finish button below) so it never
+              competes with actually completing the profile. */}
+          <button
+            type="button"
+            onClick={handleSkip}
+            className="group flex shrink-0 items-center gap-1 rounded-full border border-[#E5E7EB] bg-white/70 py-1.5 pl-3.5 pr-2.5 text-xs font-semibold text-[#6B7280] backdrop-blur-sm transition hover:border-[#DFE2E7] hover:bg-white hover:text-black"
+          >
+            Skip for now
+            <svg
+              className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </button>
         </header>
 
         {/* Progress Bars */}

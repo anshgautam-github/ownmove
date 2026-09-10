@@ -559,22 +559,16 @@ function OpportunityCard({ item, matched, saved, onToggleSaved, applied, onToggl
   const locationLabel = item.isRemote ? 'Remote' : (item.location || 'On-site');
   const showLogo = item.logoUrl && !logoFailed;
 
-  // The card itself is a plain <div> (it holds interactive buttons inside,
-  // so it can't be a nested <a>), but it should behave like the expand
-  // link — clicking anywhere on the card's own background opens the same
-  // listing. Anything actually interactive inside (the expand link, the
-  // applied/save toggle buttons) stops the click from bubbling up so it
-  // doesn't ALSO fire this handler and open a second tab / fight with the
-  // toggle.
-  const openListing = () => {
-    if (item.applyUrl) window.open(item.applyUrl, '_blank', 'noopener,noreferrer');
-  };
+  // Only the expand arrow (a real <a href> in the corner notch) opens the
+  // listing now — the card background itself is no longer a click target,
+  // so tapping/clicking anywhere else on the card (description preview,
+  // save, mark-as-applied, or just empty space) does nothing but its own
+  // thing instead of also opening a new tab underneath it.
 
   return (
     <>
     <div
-      onClick={openListing}
-      className={`group relative flex transform-gpu cursor-pointer flex-col rounded-[22px] border border-white/60 bg-[linear-gradient(165deg,rgba(255,255,255,0.62)_0%,rgba(250,248,255,0.4)_55%,rgba(255,255,255,0.26)_100%)] p-4 pr-9 text-[#1a1a1a] shadow-[inset_0_1.5px_0_rgba(255,255,255,0.9),0_10px_24px_-18px_rgba(40,32,70,0.35)] backdrop-blur-xl transition-all duration-300 ease-out ${
+      className={`group relative flex transform-gpu flex-col rounded-[22px] border border-white/60 bg-[linear-gradient(165deg,rgba(255,255,255,0.62)_0%,rgba(250,248,255,0.4)_55%,rgba(255,255,255,0.26)_100%)] p-4 pr-9 text-[#1a1a1a] shadow-[inset_0_1.5px_0_rgba(255,255,255,0.9),0_10px_24px_-18px_rgba(40,32,70,0.35)] backdrop-blur-xl transition-all duration-300 ease-out ${
         exiting
           ? 'pointer-events-none scale-90 opacity-0'
           : 'hover:-translate-y-1 hover:border-white/90 hover:bg-[linear-gradient(165deg,rgba(255,255,255,0.88)_0%,rgba(250,248,255,0.65)_55%,rgba(255,255,255,0.5)_100%)] hover:shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_24px_44px_-18px_rgba(101,89,227,0.28)]'
