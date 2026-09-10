@@ -301,6 +301,18 @@ function IntelligenceSection() {
   const menuBarClock = useMenuBarClock()
   const [hasStartedTyping, setHasStartedTyping] = useState(false)
   const [activeCategory, setActiveCategory] = useState('decide')
+  // "Show thinking" already looked like a disclosure toggle (a chevron +
+  // label) but didn't actually do anything -- the "Based on your context"
+  // list underneath it always rendered. On the MacBook mockup that's fine,
+  // there's room; on a phone that list (plus everything below it, right
+  // down to the AI's actual answer) pushed the whole card well past one
+  // screen's height before any of the actual content -- the answer --
+  // was visible. Making the toggle real and defaulting it collapsed only
+  // below `sm` fixes both: mobile starts short and expands on request,
+  // desktop is untouched (starts open, same as before).
+  const [isThinkingOpen, setIsThinkingOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 640px)').matches : true
+  )
   const activeContent = intelligenceContent[activeCategory]
   const { visibleTexts, isTyping, activeParagraph } = useTypewriterParagraphs(
     activeContent.paragraphs,
@@ -531,12 +543,24 @@ function IntelligenceSection() {
                             </div>
                           </div>
 
-                          <div className="mt-3 flex items-center gap-2 text-[clamp(0.86rem,0.9vw,0.94rem)] font-medium text-white/54">
-                            {chevronDownIcon}
+                          <button
+                            type="button"
+                            onClick={() => setIsThinkingOpen((open) => !open)}
+                            aria-expanded={isThinkingOpen}
+                            className="mt-3 flex items-center gap-2 text-[clamp(0.86rem,0.9vw,0.94rem)] font-medium text-white/54 transition hover:text-white/74"
+                          >
+                            <span className={`transition-transform duration-200 ${isThinkingOpen ? 'rotate-180' : ''}`}>
+                              {chevronDownIcon}
+                            </span>
                             <span>Show thinking</span>
-                          </div>
+                          </button>
 
-                          <div className="mt-3">
+                          <div
+                            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                              isThinkingOpen ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                            }`}
+                          >
+                          <div className="min-h-0 overflow-hidden">
                             <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                               {activeContent.consideredLabel}
                             </div>
@@ -560,8 +584,16 @@ function IntelligenceSection() {
                               ))}
                             </div>
                           </div>
+                          </div>
 
-                          <div className="mt-3 min-h-[96px] border-t border-white/8 pt-3 text-[clamp(0.88rem,0.92vw,0.96rem)] leading-[1.6] text-white/74 sm:mt-4 sm:min-h-[112px] sm:pt-4">
+                          {/* On mobile this used to reserve a flat 96px no
+                              matter what -- extra height spent before the
+                              answer even starts typing, on top of the
+                              considered-list collapse above. sm keeps its
+                              original 112px (the laptop mockup has the
+                              room); mobile only reserves enough to avoid
+                              jank for a short first line. */}
+                          <div className="mt-3 min-h-[56px] border-t border-white/8 pt-3 text-[clamp(0.88rem,0.92vw,0.96rem)] leading-[1.6] text-white/74 sm:mt-4 sm:min-h-[112px] sm:pt-4">
                             {activeContent.paragraphs.map((paragraph, index) => (
                               <p key={index} className={index === 1 ? 'mt-3' : ''}>
                                 <strong>{paragraph.lead}</strong>
