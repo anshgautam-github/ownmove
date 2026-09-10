@@ -500,22 +500,43 @@ function HowItWorksSection() {
                               maxHeight: `${stageHeightPx}px`,
                               overflowY: 'auto',
                               WebkitOverflowScrolling: 'touch',
-                              overscrollBehavior: 'contain',
+                              // `contain` (the previous value here) keeps
+                              // the overscroll *glow/bounce* from leaking
+                              // out, but it also does something easy to
+                              // miss: it stops scroll CHAINING to the
+                              // window once the card hits its own
+                              // top/bottom boundary. On a normal page
+                              // that's usually what you want -- but this
+                              // card sits inside a scroll-jacked pinned
+                              // stack whose crossfade is driven entirely by
+                              // window scroll (see `updateProgress` above),
+                              // so trapping the gesture here meant that once
+                              // you scrolled the card's own content to the
+                              // end, the *same* continued drag couldn't
+                              // hand off to the window -- you had to lift
+                              // your finger and start a new gesture
+                              // somewhere off the card just to keep
+                              // scrolling the page. `auto` restores normal
+                              // chaining: the card scrolls internally first
+                              // (revealing the CTA), and once it's exhausted
+                              // the rest of the same gesture flows through
+                              // to the window, advancing the pin/crossfade
+                              // like everywhere else on the page.
+                              overscrollBehavior: 'auto',
                               // Without this, a touch-drag that starts on the
                               // card is ambiguous between "scroll my overflow
-                              // content" and "advance the pinned scroll-jack"
-                              // (the whole section drives its crossfade off
-                              // window scroll position, see `updateProgress`
-                              // above) -- and mobile browsers tend to resolve
-                              // that ambiguity in favor of the outer/window
+                              // content" and "advance the pinned scroll-jack",
+                              // and mobile browsers tend to resolve that
+                              // ambiguity in favor of the outer/window
                               // scroll, so the card's own overflow never
                               // moves and a CTA below the fold stays
                               // unreachable by touch. `pan-y` tells the
                               // browser up front that this element owns
                               // vertical panning gestures itself, so touch
-                              // scrolling here reliably scrolls the card
-                              // (and only falls through to the window once
-                              // the card hits its own top/bottom).
+                              // scrolling here reliably scrolls the card --
+                              // and with `overscrollBehavior: 'auto'` above,
+                              // it still chains through to the window once
+                              // the card's own scroll is exhausted.
                               touchAction: 'pan-y',
                             }
                           : undefined
