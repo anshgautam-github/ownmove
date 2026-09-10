@@ -14,6 +14,27 @@ import learningJourney from '../../data/learningJourney';
 const MotionDiv = motion.div;
 const MotionButton = motion.button;
 
+// Simple Icons' "google" glyph is the plain monochrome wordmark-style "G"
+// outline, not Google's actual four-color "G" — so the same tint-with-
+// accent-color treatment that correctly reproduces every other single-
+// color brand mark here (Microsoft, AWS, Oracle, ...) was flattening
+// Google's own logo into a solid blue shape nobody would recognize as it.
+// Google is the one company on this list whose real mark isn't a single
+// color, so it gets its own inline SVG (the standard four-color "G",
+// unmodified — the same mark Google's own developer docs distribute for
+// products to identify a Google-run platform) instead of going through
+// the tinted-CDN pipeline at all.
+function GoogleMark({ className = '' }) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+    </svg>
+  );
+}
+
 // Three-tier fallback chain rather than a single external source, since a
 // single logo API (Clearbit, tried previously) can go down or start
 // blocking hotlinked requests wholesale and silently take every logo on
@@ -25,8 +46,14 @@ const MotionButton = motion.button;
 //   2. Google's favicon service (`domain`) — a live per-site icon, lower
 //      resolution but a reasonable second try if a slug is ever wrong.
 //   3. The colored monogram (`fallbackLabel`) — always renders.
-function CheckpointLogo({ iconSlug, domain, alt, fallbackLabel, accent }) {
+// `id === 'google'` skips straight to the real inline mark above instead
+// of entering that chain at all.
+function CheckpointLogo({ id, iconSlug, domain, alt, fallbackLabel, accent }) {
   const [stage, setStage] = useState(0);
+
+  if (id === 'google') {
+    return <GoogleMark className="h-full w-full object-contain p-1.5" />;
+  }
 
   if (stage >= 2) {
     return (
@@ -89,7 +116,7 @@ function CheckpointTile({ checkpoint, isActive, onToggle }) {
         className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-white/90 transition-transform duration-200 group-hover:scale-110"
         style={{ boxShadow: isActive ? `0 0 0 3px ${checkpoint.accent}22` : 'none' }}
       >
-        <CheckpointLogo iconSlug={checkpoint.iconSlug} domain={checkpoint.domain} alt={checkpoint.company} fallbackLabel={checkpoint.fallbackLabel} accent={checkpoint.accent} />
+        <CheckpointLogo id={checkpoint.id} iconSlug={checkpoint.iconSlug} domain={checkpoint.domain} alt={checkpoint.company} fallbackLabel={checkpoint.fallbackLabel} accent={checkpoint.accent} />
       </span>
       {/* block + w-full, not just min-w-0 on an inline <span>: block
           establishes a definite width for the text below to wrap against,
@@ -125,7 +152,7 @@ function InfoCard({ checkpoint }) {
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/80 p-2 shadow-[0_10px_24px_-12px_rgba(40,50,30,0.35)]">
-            <CheckpointLogo iconSlug={checkpoint.iconSlug} domain={checkpoint.domain} alt={checkpoint.company} fallbackLabel={checkpoint.fallbackLabel} accent={checkpoint.accent} />
+            <CheckpointLogo id={checkpoint.id} iconSlug={checkpoint.iconSlug} domain={checkpoint.domain} alt={checkpoint.company} fallbackLabel={checkpoint.fallbackLabel} accent={checkpoint.accent} />
           </span>
           <div className="min-w-0">
             <p className="text-[12px] font-black uppercase tracking-wide" style={{ color: checkpoint.accent }}>{checkpoint.company}</p>
@@ -211,7 +238,7 @@ export default function LearningJourney() {
           style={{ boxShadow: `0 0 0 2px ${active.accent}55, inset 0 1px 0 rgba(255,255,255,0.9)` }}
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-white/90">
-            <CheckpointLogo iconSlug={active.iconSlug} domain={active.domain} alt={active.company} fallbackLabel={active.fallbackLabel} accent={active.accent} />
+            <CheckpointLogo id={active.id} iconSlug={active.iconSlug} domain={active.domain} alt={active.company} fallbackLabel={active.fallbackLabel} accent={active.accent} />
           </span>
           <span className="min-w-0 flex-1">
             <p className="truncate text-[12.5px] font-black leading-tight text-[#1a1a1a]">{active.company}</p>
