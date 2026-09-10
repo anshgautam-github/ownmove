@@ -2206,6 +2206,28 @@ body {
   background-color: rgba(20, 20, 20, 0.45);
 }
 
+/* On a touch device there's no cursor sitting nearby to benefit from a
+   permanent scroll affordance the way a mouse/trackpad user does — you
+   just drag the content directly — so the always-on thin bar above (which
+   exists specifically so a *pointer* user can see there's more content)
+   just reads as visual clutter riding along on every swipe. Hide it
+   there and let the platform's own transient overlay indicator (shown
+   only while actively scrolling, then faded out) do that job instead.
+   `(hover: none) and (pointer: coarse)` is the standard touch-device
+   signature — it won't affect a mouse/trackpad, including one on a
+   touchscreen laptop. */
+@media (hover: none) and (pointer: coarse) {
+  .custom-scroll,
+  .custom-scroll-mono {
+    scrollbar-width: none;
+  }
+
+  .custom-scroll::-webkit-scrollbar,
+  .custom-scroll-mono::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Liquid-glass CTA pill — a thick dark ring around an animated, moving
    blue-to-violet gradient "liquid" fill (the app's #7b62e8/#5c63ff accent
    family, pushed brighter/more saturated so it reads as glowing glass
