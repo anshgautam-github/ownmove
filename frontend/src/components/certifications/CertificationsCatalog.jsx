@@ -137,41 +137,16 @@ function CertificationLogo({ domain, alt }) {
 function CertificationCard({ cert }) {
   const domain = domainFromUrl(cert.url);
 
-  // Same "whole card opens the listing, not just the arrow" behavior as
-  // the Discover opportunity cards. This card has no other interactive
-  // element besides the expand link itself, so that link just needs to
-  // stop its own click from also bubbling up into this handler (which
-  // would otherwise open two tabs at once).
-  const openCert = () => {
-    if (cert.url) window.open(cert.url, '_blank', 'noopener,noreferrer');
-  };
+
 
   return (
     <div
-      onClick={openCert}
-      className="group relative flex h-full cursor-pointer flex-col gap-3 rounded-[20px] border border-white/60 bg-[linear-gradient(165deg,rgba(255,255,255,0.62)_0%,rgba(250,248,255,0.4)_55%,rgba(255,255,255,0.26)_100%)] p-4 pr-9 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.9),0_10px_24px_-18px_rgba(40,32,70,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/90 hover:bg-[linear-gradient(165deg,rgba(255,255,255,0.88)_0%,rgba(250,248,255,0.65)_55%,rgba(255,255,255,0.5)_100%)] hover:shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_24px_44px_-18px_rgba(101,89,227,0.28)]"
+      className="group relative flex h-full flex-col gap-3 rounded-[20px] border border-white/60 bg-[linear-gradient(165deg,rgba(255,255,255,0.62)_0%,rgba(250,248,255,0.4)_55%,rgba(255,255,255,0.26)_100%)] p-4 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.9),0_10px_24px_-18px_rgba(40,32,70,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/90 hover:bg-[linear-gradient(165deg,rgba(255,255,255,0.88)_0%,rgba(250,248,255,0.65)_55%,rgba(255,255,255,0.5)_100%)] hover:shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_24px_44px_-18px_rgba(101,89,227,0.28)]"
     >
       {/* Faint brand-tinted ambient glow, same as the opportunity cards */}
       <div className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(123,98,232,0.16)_0%,transparent_70%)] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
 
-      {/* Same "bitten corner" notch + go-to button pattern as the Discover
-          opportunity cards (OpportunityCard in AppShell.jsx), so a card in
-          this catalog reads as visually consistent with the rest of
-          Discover: a circular button straddling the top-right corner that
-          opens the certifying body's own page in a new tab. Price is
-          deliberately not shown here — the click-through to the official
-          page is the primary action, not a cost comparison. */}
-      <div className="pointer-events-none absolute -right-2.5 -top-2.5 z-[5] h-14 w-14 rounded-full bg-[#f5f5f2]" />
-      <a
-        href={cert.url || '#'}
-        target="_blank"
-        rel="noreferrer"
-        title="Go to certification"
-        onClick={(e) => e.stopPropagation()}
-        className="absolute -right-0.5 -top-0.5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/95 text-[#3a3a38] shadow-[0_6px_16px_-6px_rgba(40,50,30,0.35)] transition-all duration-300 group-hover:border-transparent group-hover:bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] group-hover:text-white group-hover:shadow-[0_10px_22px_-8px_rgba(101,89,227,0.65)]"
-      >
-        {icon.expand}
-      </a>
+
 
       {/* Header: logo + name + issuing body — same layout as a Programs card */}
       <div className="relative flex items-start gap-3 pr-2">

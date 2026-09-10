@@ -6,7 +6,6 @@ import { supabase } from '../../services/supabase/client';
 // company logos already live in the orbit visual to the right. This
 // reinforces the breadth of opportunity types instead of repeating brands.
 const discoveryCategories = [
-  'Internships',
   'Fellowships',
   'Open Source',
   'Student Programs',
@@ -16,6 +15,7 @@ const discoveryCategories = [
   'Ambassador Programs',
   'Competitions',
   'Communities',
+  'Events',
   'Conferences',
   'Certifications',
 ]
@@ -412,7 +412,7 @@ function HeroSection() {
                 purple accent reads as a deliberate color choice instead of
                 "black, but faded." */}
             <p className="mx-auto mt-6 max-w-[540px] text-[clamp(1.05rem,1.2vw,1.2rem)] font-medium leading-[1.65] tracking-[-0.01em] text-[#59516c] lg:mx-0">
-              We surface the internships, fellowships, and programs you won&apos;t find on a typical job board — then help you understand where you stand and what to try next.
+              We surface exclusive opportunities you haven&apos;t heard of and won&apos;t find on a typical job board, including programs, fellowships, events, communities, and more, then help you understand where you stand and what to try next.
             </p>
 
             <div className="mx-auto mt-8 flex max-w-[540px] flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[0.98rem] font-medium text-[#171321]/75 lg:mx-0 lg:justify-start">
