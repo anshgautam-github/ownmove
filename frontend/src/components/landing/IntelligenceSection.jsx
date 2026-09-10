@@ -138,6 +138,11 @@ const chevronDownIcon = (
     <path d="m6 9 6 6 6-6" />
   </svg>
 );
+const checkIcon = (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m5 12.5 4.5 4.5L19 7" />
+  </svg>
+);
 
 // The five tabs used to just re-list AI Coach / Profile Analysis / Career
 // Roadmap / Career Simulation / Discover — i.e. the same five features the
@@ -301,6 +306,14 @@ function IntelligenceSection() {
   const menuBarClock = useMenuBarClock()
   const [hasStartedTyping, setHasStartedTyping] = useState(false)
   const [activeCategory, setActiveCategory] = useState('decide')
+  // The mobile category switcher used to be a native <select> -- functional,
+  // but its open dropdown is rendered entirely by the OS/browser (that's
+  // why it showed up as a plain system list with no way to style it to
+  // match the rest of the page). Swapping it for a real button + listbox
+  // keeps the same behavior (tap to open, tap a row to choose) while
+  // letting it actually look like part of this design.
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
+  const categoryMenuRef = useRef(null)
   // "Show thinking" already looked like a disclosure toggle (a chevron +
   // label) but didn't actually do anything -- the "Based on your context"
   // list underneath it always rendered. On the MacBook mockup that's fine,
@@ -337,6 +350,28 @@ function IntelligenceSection() {
     observer.observe(node)
     return () => observer.disconnect()
   }, [hasStartedTyping])
+
+  useEffect(() => {
+    if (!isCategoryMenuOpen) return undefined
+
+    function handlePointerDown(event) {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
+        setIsCategoryMenuOpen(false)
+      }
+    }
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setIsCategoryMenuOpen(false)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isCategoryMenuOpen])
 
   return (
     <section ref={sectionRef} className="relative overflow-hidden bg-[linear-gradient(180deg,#090b16_0%,#141b36_18%,#1f2550_46%,#171d3d_74%,#090d1b_100%)] text-white">
@@ -437,7 +472,7 @@ function IntelligenceSection() {
                   </div>
                   <div className="mx-auto flex w-full max-w-[300px] items-center justify-center gap-1.5 rounded-md bg-white/[0.06] px-3 py-1 text-[11px] text-white/50">
                     <LockGlyph className="h-2.5 w-2.5" />
-                    <span>ownmove.ai</span>
+                    <span>ownmove.in</span>
                   </div>
                   <span className="hidden text-[15px] leading-none text-white/25 sm:inline">+</span>
                 </div>
@@ -448,25 +483,33 @@ function IntelligenceSection() {
                     single column, and five full-width cards eat the whole
                     screen before the demo conversation ever appears. A
                     select keeps every category reachable in one row instead. */}
-                <div className="sm:hidden">
-                  <label htmlFor="intelligence-category-select" className="sr-only">
+                <div className="relative sm:hidden" ref={categoryMenuRef}>
+                  <span id="intelligence-category-label" className="sr-only">
                     Choose a situation to preview
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="intelligence-category-select"
-                      value={activeCategory}
-                      onChange={(event) => setActiveCategory(event.target.value)}
-                      className="w-full appearance-none rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] px-4 py-3.5 pr-10 text-[0.95rem] font-medium tracking-[-0.03em] text-white shadow-[0_18px_34px_rgba(12,12,30,0.22)] focus:outline-none focus:ring-2 focus:ring-[#7b82ff]/50"
-                    >
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id} className="bg-[#141a33] text-white">
-                          {category.title} — {category.subtitle}
-                        </option>
-                      ))}
-                    </select>
+                  </span>
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={isCategoryMenuOpen}
+                    aria-labelledby="intelligence-category-label"
+                    onClick={() => setIsCategoryMenuOpen((open) => !open)}
+                    className={`flex w-full items-center gap-3 rounded-[18px] border bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] px-3.5 py-3 text-left shadow-[0_18px_34px_rgba(12,12,30,0.22)] transition focus:outline-none focus:ring-2 focus:ring-[#7b82ff]/50 ${
+                      isCategoryMenuOpen ? 'border-[#7b82ff]/45' : 'border-white/10'
+                    }`}
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[13px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] text-[#ddd5ff] shadow-[0_8px_18px_rgba(18,18,38,0.2)]">
+                      {categories.find((category) => category.id === activeCategory)?.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[0.95rem] font-medium tracking-[-0.03em] text-white">
+                        {categories.find((category) => category.id === activeCategory)?.title}
+                      </div>
+                      <div className="truncate text-[0.78rem] text-white/50">
+                        {categories.find((category) => category.id === activeCategory)?.subtitle}
+                      </div>
+                    </div>
                     <svg
-                      className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50"
+                      className={`h-4 w-4 shrink-0 text-white/50 transition-transform duration-200 ${isCategoryMenuOpen ? 'rotate-180' : ''}`}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -476,7 +519,46 @@ function IntelligenceSection() {
                     >
                       <path d="m6 9 6 6 6-6" />
                     </svg>
-                  </div>
+                  </button>
+
+                  {isCategoryMenuOpen && (
+                    <ul
+                      role="listbox"
+                      aria-labelledby="intelligence-category-label"
+                      className="absolute inset-x-0 top-[calc(100%+8px)] z-30 max-h-[280px] overflow-y-auto rounded-[18px] border border-white/10 bg-[#12162c] shadow-[0_24px_48px_rgba(6,6,20,0.5)] backdrop-blur-xl"
+                    >
+                      {categories.map((category) => {
+                        const isActive = category.id === activeCategory
+                        return (
+                          <li key={category.id} role="option" aria-selected={isActive}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveCategory(category.id)
+                                setIsCategoryMenuOpen(false)
+                              }}
+                              className={`flex w-full items-center gap-3 px-3.5 py-3 text-left transition ${
+                                isActive ? 'bg-[#7b82ff]/16' : 'hover:bg-white/5'
+                              }`}
+                            >
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] text-[#ddd5ff]">
+                                {category.icon}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[0.9rem] font-medium tracking-[-0.03em] text-white">
+                                  {category.title}
+                                </div>
+                                <div className="truncate text-[0.76rem] text-white/50">
+                                  {category.subtitle}
+                                </div>
+                              </div>
+                              {isActive && <span className="shrink-0 text-[#9fa5ff]">{checkIcon}</span>}
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
                 </div>
 
                 <div className="hidden gap-2.5 sm:grid sm:grid-cols-2 lg:grid-cols-5">
@@ -527,7 +609,14 @@ function IntelligenceSection() {
                         <div className="mt-3 rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3.5 shadow-[0_16px_32px_rgba(10,10,26,0.2)] backdrop-blur-xl sm:mt-4 sm:px-5 sm:py-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[linear-gradient(180deg,#8370ff,#4450ff)] text-xs font-semibold text-white shadow-[0_10px_24px_rgba(68,80,255,0.24)]">
+                              {/* Purple "AI" avatar -- hidden below `sm`.
+                                  On the phone-width card this tiny square
+                                  next to the name wasn't reading as an
+                                  avatar so much as a stray purple chip
+                                  crowding the name/subtitle; the laptop
+                                  mockup has the room for it, mobile doesn't
+                                  need it to know who's answering. */}
+                              <div className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(180deg,#8370ff,#4450ff)] text-xs font-semibold text-white shadow-[0_10px_24px_rgba(68,80,255,0.24)] sm:flex">
                                 AI
                               </div>
                               <div>
@@ -538,7 +627,13 @@ function IntelligenceSection() {
                               </div>
                             </div>
 
-                            <div className="rounded-full border border-white/8 bg-white/6 px-3 py-[5px] text-[11px] font-medium text-white/58">
+                            {/* "Based on your profile" pill -- same story,
+                                hidden below `sm`. It's restated content
+                                (the considered-list/paragraphs below already
+                                say as much) that on mobile mostly just
+                                fought the name/subtitle for space in this
+                                narrow header row. */}
+                            <div className="hidden rounded-full border border-white/8 bg-white/6 px-3 py-[5px] text-[11px] font-medium text-white/58 sm:block">
                               {activeContent.badge}
                             </div>
                           </div>
