@@ -14,22 +14,12 @@ const mailIcon = (
     <path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z" />
   </svg>
 );
-const xIcon = (
-  <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor" aria-hidden="true">
-    <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z" />
-  </svg>
-);
-const discordIcon = (
-  <svg viewBox="0 0 640 512" width="19" height="15" fill="currentColor" aria-hidden="true">
-    <path d="M524.5 69.8a1.5 1.5 0 0 0 -.8-.7A485.1 485.1 0 0 0 404.1 32a1.8 1.8 0 0 0 -1.9 .9 337.5 337.5 0 0 0 -14.9 30.6 447.8 447.8 0 0 0 -134.4 0 309.5 309.5 0 0 0 -15.1-30.6 1.9 1.9 0 0 0 -1.9-.9A483.7 483.7 0 0 0 116.1 69.1a1.7 1.7 0 0 0 -.8 .7C39.1 183.7 18.2 294.7 28.4 404.4a2 2 0 0 0 .8 1.4A487.7 487.7 0 0 0 176 479.9a1.9 1.9 0 0 0 2.1-.7A348.2 348.2 0 0 0 208.1 430.4a1.9 1.9 0 0 0 -1-2.6 321.2 321.2 0 0 1 -45.9-21.9 1.9 1.9 0 0 1 -.2-3.1c3.1-2.3 6.2-4.7 9.1-7.1a1.8 1.8 0 0 1 1.9-.3c96.2 43.9 200.4 43.9 295.5 0a1.8 1.8 0 0 1 1.9 .2c2.9 2.4 6 4.9 9.1 7.2a1.9 1.9 0 0 1 -.2 3.1 301.4 301.4 0 0 1 -45.9 21.8 1.9 1.9 0 0 0 -1 2.6 391.1 391.1 0 0 0 30 48.8 1.9 1.9 0 0 0 2.1 .7A486 486 0 0 0 610.7 405.7a1.9 1.9 0 0 0 .8-1.4C623.7 277.6 590.9 167.5 524.5 69.8zM222.5 337.6c-29 0-52.8-26.6-52.8-59.2S193.1 219.1 222.5 219.1c29.7 0 53.3 26.8 52.8 59.2C275.3 311 251.9 337.6 222.5 337.6zm195.4 0c-29 0-52.8-26.6-52.8-59.2S388.4 219.1 417.9 219.1c29.7 0 53.3 26.8 52.8 59.2C470.7 311 447.5 337.6 417.9 337.6z" />
-  </svg>
-);
 
+// X and Discord dropped — only LinkedIn and email are real presences for
+// now.
 const socialLinks = [
   { label: 'LinkedIn', icon: linkedinIcon },
   { label: 'Gmail', icon: mailIcon },
-  { label: 'X', icon: xIcon },
-  { label: 'Discord', icon: discordIcon },
 ]
 
 function FooterSection() {
@@ -102,42 +92,22 @@ function FooterSection() {
               <div className="relative grid gap-4 sm:grid-cols-[0.9fr_1.1fr] sm:items-start sm:gap-6">
                 <div>
                   <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#f2e9ff] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#7b62e8]">
-                    <span className="[&>svg]:h-3 [&>svg]:w-3">{mailIcon}</span>
-                    Newsletter
+                    Why OwnMove
                   </span>
                   <h3 className="text-[clamp(2rem,3.1vw,3.2rem)] font-semibold leading-[0.92] tracking-[-0.06em]">
-                    Keeping up
+                    Own your
                     <br />
-                    with us.
+                    next move.
                   </h3>
                 </div>
 
                 <p className="max-w-[360px] text-[clamp(0.98rem,1vw,1.08rem)] leading-7 text-[#6e6876] sm:leading-8">
-                  Get new opportunities, career tips, and product updates dropped straight into your
-                  inbox. No spam, just what actually helps you land the next role.
+                  From your first internship to your next big decision, OwnMove brings real
+                  opportunities and an AI Coach that actually knows your profile into one place —
+                  not just another job board.
                 </p>
               </div>
 
-              <div className="relative mt-5 flex flex-col gap-3 rounded-[22px] bg-[linear-gradient(90deg,rgba(242,220,255,0.82),rgba(241,224,255,0.72))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] sm:mt-8 sm:flex-row sm:items-center">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="min-w-0 flex-1 rounded-[18px] bg-transparent px-4 py-3.5 text-[1.25rem] font-medium tracking-[-0.03em] text-[#3b3151] outline-none placeholder:text-[#52456c] sm:py-4"
-                />
-                {/* Flat white on a pale pink strip was the one genuinely
-                    lifeless element in the stacked mobile layout — full
-                    width and a colored gradient here gives the actual call
-                    to action some presence. sm+ keeps the original flat-
-                    white treatment, which already reads fine sitting in a
-                    row next to the input instead of stacked under it. */}
-                <button
-                  type="button"
-                  className="footer-submit-button inline-flex w-full items-center justify-center gap-3 rounded-[18px] bg-[linear-gradient(120deg,#7b62e8_0%,#5c63ff_55%,#ff6fae_100%)] px-5 py-3.5 text-white shadow-[0_14px_32px_-10px_rgba(101,89,227,0.55)] transition hover:translate-y-[-1px] sm:w-auto sm:justify-between sm:gap-6 sm:bg-white sm:py-4 sm:text-[#141019] sm:shadow-[0_10px_24px_rgba(32,19,60,0.12)]"
-                >
-                  <span className="text-[1.9rem] font-light leading-none">+</span>
-                  <span className="text-[0.95rem] font-semibold uppercase tracking-[0.14em]">Submit</span>
-                </button>
-              </div>
             </div>
           </div>
 
