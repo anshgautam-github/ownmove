@@ -9,9 +9,15 @@ worker thread via `asyncio.to_thread` rather than awaiting it directly.
 
 The model itself is loaded lazily (first call, not import time) and cached
 as a module-level singleton — loading it is the expensive part (reading
-~90MB off disk into memory), encoding a batch of short strings after that
-is fast. `app/main.py`'s lifespan hook warms this up at process startup so
-the first real request isn't the one that pays for it.
+~90MB off disk into memory, on top of pulling in the torch runtime), so it
+never happens just from importing this module or the app booting. `app/
+main.py`'s lifespan hook can optionally warm it up at process startup
+instead, so the first real request isn't the one that pays for it, but
+that's opt-in via `settings.EMBEDDING_WARM_UP_ON_STARTUP` (default False)
+because eagerly loading it is memory low-instances can't spare — see that
+setting's comment in `app/core/config.py`. With the flag off, this module
+stays fully dormant, memory-wise, until something actually calls
+`embed`/`embed_batch`.
 """
 
 import asyncio

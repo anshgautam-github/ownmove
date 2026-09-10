@@ -40,19 +40,34 @@ async def lifespan(app: FastAPI):
 
     # Warm up the recommendation embedding model (sentence-transformers/
     # all-MiniLM-L6-v2) so the first /recommendations/for-you request
-    # doesn't pay for loading it off disk. Best-effort and non-fatal: an
-    # environment that hasn't installed the optional `sentence-transformers`
-    # dependency yet (see requirements.txt) should still boot and serve
-    # every other route — EmbeddingGenerator raises a clear 503 on first
-    # actual use in that case instead.
-    try:
-        from app.ai.embeddings.generator import _load_model
+    # doesn't pay for loading it off disk. Gated behind
+    # EMBEDDING_WARM_UP_ON_STARTUP (default False, see app/core/config.py)
+    # because loading it — and the torch runtime under it — is what pushed
+    # a 512MB instance (Render's free tier) over its memory limit during
+    # boot. With the flag off, nothing is loaded here: EmbeddingGenerator
+    # (app/ai/embeddings/generator.py) still lazy-loads the model itself,
+    # on the first request that actually needs it, via `_load_model()`'s
+    # `@lru_cache` — recommendations/embeddings keep working either way,
+    # this only controls whether that cost is paid at boot or on demand.
+    # Best-effort and non-fatal when enabled: an environment that hasn't
+    # installed the optional `sentence-transformers` dependency yet (see
+    # requirements.txt) should still boot and serve every other route —
+    # EmbeddingGenerator raises a clear 503 on first actual use in that
+    # case instead.
+    if settings.EMBEDDING_WARM_UP_ON_STARTUP:
+        try:
+            from app.ai.embeddings.generator import _load_model
 
-        await asyncio.to_thread(_load_model)
-    except Exception:  # noqa: BLE001 - startup warm-up must never block boot
-        logger.warning(
-            "Embedding model warm-up skipped (will load lazily on first use).",
-            exc_info=True,
+            await asyncio.to_thread(_load_model)
+        except Exception:  # noqa: BLE001 - startup warm-up must never block boot
+            logger.warning(
+                "Embedding model warm-up skipped (will load lazily on first use).",
+                exc_info=True,
+            )
+    else:
+        logger.info(
+            "Embedding model warm-up skipped (EMBEDDING_WARM_UP_ON_STARTUP=False); "
+            "will load lazily on first use.",
         )
 
     yield

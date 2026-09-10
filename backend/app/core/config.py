@@ -106,6 +106,19 @@ class Settings(BaseSettings):
     # (~/.cache/huggingface) — set this in Docker images that pre-bake the
     # model at build time so it doesn't try to re-download at runtime.
     EMBEDDING_MODEL_CACHE_DIR: str = ""
+    # Off by default: loading sentence-transformers/all-MiniLM-L6-v2 (and
+    # the torch runtime under it) into memory is exactly what pushed a
+    # 512MB instance (Render's free tier) over its limit during startup --
+    # see app/main.py's lifespan hook. EmbeddingGenerator (app/ai/embeddings/
+    # generator.py) already lazy-loads the model itself on first real use
+    # via `_load_model()`'s `@lru_cache`, so recommendations/embeddings
+    # still work with this off; the only thing this flag controls is
+    # whether that load happens proactively at boot (paid for once, up
+    # front, so the first /recommendations/for-you request doesn't pay for
+    # it) or on-demand (nothing loaded into memory until a route that
+    # actually needs it is hit). Flip to True once this service is on an
+    # instance with headroom for it.
+    EMBEDDING_WARM_UP_ON_STARTUP: bool = False
 
     # Profile Analysis is a multi-section structured-output call, worth a
     # stronger/pricier model than routine chat even if DEFAULT_CHAT_MODEL is
