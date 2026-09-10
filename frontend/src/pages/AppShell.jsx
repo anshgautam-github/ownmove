@@ -86,17 +86,6 @@ const icons = {
 
 // ---------- opportunities helpers ----------
 
-function timeAgo(dateStr) {
-  if (!dateStr) return '';
-  const diffMs = Date.now() - new Date(dateStr).getTime();
-  const days = Math.floor(diffMs / 86400000);
-  if (days <= 0) return 'today';
-  if (days === 1) return '1 day ago';
-  if (days < 30) return `${days} days ago`;
-  const months = Math.floor(days / 30);
-  return `${months} ${months === 1 ? 'month' : 'months'} ago`;
-}
-
 function formatDate(dateStr) {
   if (!dateStr) return null;
   return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -563,8 +552,6 @@ function OpportunityCard({ item, matched, saved, onToggleSaved, applied, onToggl
   // exactly as before while touch devices get an explicit tap target.
   const [showDescription, setShowDescription] = useState(false);
   const deadlineLabel = formatDate(item.deadline);
-  const postedLabel = timeAgo(item.postedAt);
-  const eligibleYearsLabel = (item.eligibleYears || []).length > 0 ? item.eligibleYears.join(', ') : '';
   const locationLabel = item.isRemote ? 'Remote' : (item.location || 'On-site');
   const showLogo = item.logoUrl && !logoFailed;
 
@@ -649,8 +636,8 @@ function OpportunityCard({ item, matched, saved, onToggleSaved, applied, onToggl
         </div>
 
         {item.description && (
-          <div className="group/desc flex items-center gap-2 pl-9">
-            <span className="shrink-0 text-[9.5px] font-black uppercase tracking-wide text-[#9a9a97]">Description</span>
+          <div className="group/desc flex items-center gap-2.5 pl-9">
+            <span className="w-[70px] shrink-0 text-[9.5px] font-black uppercase tracking-wide text-[#9a9a97]">Description</span>
             {/* Hover-only text/behavior doesn't exist on touch devices, so
                 this is now also a real tap target: onClick toggles
                 `showDescription`, which the pop-out below responds to in
@@ -722,25 +709,10 @@ function OpportunityCard({ item, matched, saved, onToggleSaved, applied, onToggl
           </div>
         )}
 
-        {(item.duration || eligibleYearsLabel) && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-9">
-            {item.duration && (
-              <span className="text-[10.5px] font-semibold text-[#6a6a68]">
-                <span className="font-black uppercase tracking-wide text-[#9a9a97]">Duration </span>{item.duration}
-              </span>
-            )}
-            {eligibleYearsLabel && (
-              <span className="text-[10.5px] font-semibold text-[#6a6a68]">
-                <span className="font-black uppercase tracking-wide text-[#9a9a97]">Eligible </span>{eligibleYearsLabel}
-              </span>
-            )}
-          </div>
-        )}
-
-        {postedLabel && (
-          <div className="flex items-center gap-2 pl-9">
-            <span className="shrink-0 text-[9.5px] font-black uppercase tracking-wide text-[#9a9a97]">Posted</span>
-            <span className="text-[10.5px] font-semibold text-[#6a6a68]">{postedLabel}</span>
+        {item.duration && (
+          <div className="flex items-center gap-2.5 pl-9">
+            <span className="w-[70px] shrink-0 text-[9.5px] font-black uppercase tracking-wide text-[#9a9a97]">Duration</span>
+            <span className="text-[10.5px] font-semibold text-[#6a6a68]">{item.duration}</span>
           </div>
         )}
       </div>
@@ -1360,7 +1332,6 @@ function SidebarContentBody({ items, sectionLabel, initialKey, mode, profile, sa
           <div className="mt-3 flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-[20px] border border-dashed border-white/70 bg-white/40 px-6 py-10 text-center">
             <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${accentBadgeCls}`}>Coming soon</span>
             <p className="max-w-sm text-[12.5px] font-semibold text-[#7a7a76]">For You isn&apos;t live yet. In an upcoming release, it&apos;ll show opportunities picked specifically for you, based on your profile.</p>
-            <a href="/profile" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#161616] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#2a2a2a]">Complete your profile</a>
           </div>
         ) : mode === 'opportunities' ? (
           <div ref={contentScrollRef} className="custom-scroll mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-1 pr-2 pt-2">
