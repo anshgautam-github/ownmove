@@ -771,9 +771,31 @@ class DevfolioAgent(BaseOpportunityAgent):
 
 agent_registry.register(DevfolioAgent)
 
-# Daily at 12:00 UTC -- offset from Devpost's 06:00 UTC (see devpost.py's
-# own scheduling comment) purely so the two hackathon sources' daily runs
-# don't land in the same minute; nothing about either agent actually
-# requires that separation, and re-registering with a different
-# `ScheduleConfig` at any point changes it.
-job_registry.set("devfolio", ScheduleConfig.cron("0 12 * * *"))
+# Every 3 days (not daily, unlike Devpost -- an explicit, deliberate choice
+# for this source only, made when the extra per-candidate enrichment fetch
+# was added to extract() -- see this module's own module docstring and
+# `settings.DEVFOLIO_FETCH_LOGO_AND_DESCRIPTION`'s comment in
+# app/core/config.py). `interval` (not `cron`) so "due" means "at least 3
+# days since this source's own last run", not "matches a specific
+# clock-time" -- exactly what "every 3 days" should mean.
+#
+# IMPORTANT operational note: `JobRegistry._last_run_at` (see
+# app/ingestion/jobs/registry.py) is an in-memory dict on a process-wide
+# singleton -- it is NOT persisted anywhere, so it resets to "never run"
+# every time the backend process restarts (a redeploy, a crash, or --
+# notably -- an ephemeral/free hosting tier's web service spinning down
+# after inactivity and cold-starting on the next request). That makes
+# `GET /ingestion/due` / `POST /ingestion/run-due` (see
+# app/api/v1/routes/ingestion.py) reliable ONLY on a host that keeps this
+# process running continuously between polls. Until/unless this app is on
+# a host like that, the actual every-3-days cadence in production is
+# enforced by an EXTERNAL scheduler (e.g. Supabase's pg_cron + pg_net, or
+# any other cron) calling `POST /ingestion/run/devfolio` directly on its
+# own 3-day cron schedule -- that route always runs on demand regardless
+# of this registration (see `run_source()` in that same file). This
+# `ScheduleConfig` is registered anyway so `GET /ingestion/due` keeps
+# reporting accurate operator-facing "is Devfolio due" info even though it
+# isn't (yet) what's actually driving execution in production, and so a
+# future move to a persistently-running host + `/ingestion/run-due` works
+# correctly with zero further code changes.
+job_registry.set("devfolio", ScheduleConfig.every(3 * 24 * 60 * 60))

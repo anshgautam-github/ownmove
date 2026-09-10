@@ -44,6 +44,7 @@ Run in the Supabase SQL Editor (or via the CLI) in this order:
 | 30 | `schema/020_opportunity_applications.sql` | `opportunity_applications` — lets a user mark an opportunity as applied, hiding it from their Discover lists |
 | 31 | `policies/008_rls_opportunity_applications.sql` | RLS for `opportunity_applications` — **required** |
 | 32 | `schema/025_opportunities_ingestion_source_id_rename.sql` | Renames `opportunities.external_id` → `source_id` to match what's actually on the live table (idempotent; also backfills the `(source, source_id)` unique index if missing); backs the Devpost hackathon ingestion agent (`backend/app/ingestion/agents/sources/devpost.py`) |
+| 33 | `schema/026_devfolio_ingestion_cron.sql` | Enables `pg_cron`/`pg_net` and schedules `POST /api/v1/ingestion/run/devfolio` on the deployed Render backend every 3 days, authenticated via a Supabase Vault secret (never a raw value in this file) — idempotent/safe to re-run; requires `vault.create_secret(<key>, 'devfolio_ingestion_admin_key', ...)` to be run once, interactively, first (see the file's own header) |
 
 See [`../docs/schema-v2-design.md`](../docs/schema-v2-design.md) for the full
 rationale behind 6–15, the ER diagram, and tables intentionally deferred.

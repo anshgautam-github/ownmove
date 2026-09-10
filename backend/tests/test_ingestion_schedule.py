@@ -3,11 +3,18 @@
 `app/ingestion/agents/sources/devpost.py`'s bottom-of-module
 `job_registry.set("devpost", ScheduleConfig.cron("0 6 * * *"))`) actually
 becomes "due" at 06:00 UTC and nowhere else, that `DevfolioAgent`'s own
-daily job (`job_registry.set("devfolio", ScheduleConfig.cron("0 12 * * *"))`,
-see `app/ingestion/agents/sources/devfolio.py`) becomes due at 12:00 UTC and
-nowhere else, and that `should_run()`/`JobRegistry` handle invalid or
-missing schedule configuration by refusing to construct rather than
-silently misbehaving at runtime.
+every-3-days job (`job_registry.set("devfolio", ScheduleConfig.every(3 * 24 * 60 * 60))`,
+see `app/ingestion/agents/sources/devfolio.py`) becomes due exactly 3 days
+after its last run (an `interval` schedule, not `cron` -- see that
+module's own scheduling comment for why: production actually enforces
+this cadence via an external scheduler calling `/ingestion/run/devfolio`
+directly, not via this registration's `due_sources()`/`run-due` path, since
+`JobRegistry`'s `_last_run_at` is in-memory and doesn't survive a process
+restart on ephemeral hosting -- this file still covers the registration
+itself, so `GET /ingestion/due` keeps reporting it accurately), and that
+`should_run()`/`JobRegistry` handle invalid or missing schedule
+configuration by refusing to construct rather than silently misbehaving at
+runtime.
 
 `app.ingestion.jobs.schedule.should_run()`'s own generic interval/cron
 logic already has baseline coverage in `tests/test_ingestion_pipeline.py`
@@ -18,7 +25,7 @@ specific UTC time daily, do not assume local timezone" was an explicit
 requirement.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -44,53 +51,83 @@ def test_devpost_is_registered_with_a_daily_06_00_utc_cron_schedule():
 
 
 def test_devpost_due_sources_includes_devpost_at_06_00_utc():
-    at_six = datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc)
+    at_six = datetime(2026, 9, 10, 6, 0, tzinfo=UTC)
     assert "devpost" in job_registry.due_sources(now=at_six)
 
 
 def test_devpost_due_sources_excludes_devpost_off_the_matching_minute():
     for hour, minute in [(5, 59), (6, 1), (0, 0), (18, 0), (23, 59)]:
-        moment = datetime(2026, 9, 10, hour, minute, tzinfo=timezone.utc)
+        moment = datetime(2026, 9, 10, hour, minute, tzinfo=UTC)
         assert "devpost" not in job_registry.due_sources(now=moment), (hour, minute)
 
 
 # ---------------------------------------------------------------------------
-# Devfolio's own registration -- offset from Devpost's (12:00 UTC vs 06:00
-# UTC) purely so the two hackathon sources' daily runs don't land in the
-# same minute; see devfolio.py's own scheduling comment.
+# Devfolio's own registration -- `interval`, every 3 days, deliberately
+# NOT on the same clock-time-based mechanism Devpost uses; see
+# devfolio.py's own scheduling comment for why (both the "every 3 days"
+# choice itself and the operational caveat about what actually enforces it
+# in production today).
 # ---------------------------------------------------------------------------
 
+_THREE_DAYS_SECONDS = 3 * 24 * 60 * 60
 
-def test_devfolio_is_registered_with_a_daily_12_00_utc_cron_schedule():
+
+def test_devfolio_is_registered_with_an_every_3_days_interval_schedule():
     schedule = job_registry.get("devfolio")
 
     assert schedule is not None
-    assert schedule.kind == "cron"
-    assert schedule.cron_expression == "0 12 * * *"
+    assert schedule.kind == "interval"
+    assert schedule.interval_seconds == _THREE_DAYS_SECONDS
     assert schedule.enabled is True
 
 
-def test_devfolio_due_sources_includes_devfolio_at_12_00_utc():
-    at_noon = datetime(2026, 9, 10, 12, 0, tzinfo=timezone.utc)
-    assert "devfolio" in job_registry.due_sources(now=at_noon)
+def test_devfolio_due_sources_includes_devfolio_when_never_run():
+    # Interval schedules (unlike cron) are due immediately the first time
+    # they're checked -- there's no "matching minute" to wait for. Real
+    # behavior difference from the old daily-cron registration, worth
+    # pinning down explicitly rather than assuming it carried over.
+    any_moment = datetime(2026, 9, 10, 3, 17, tzinfo=UTC)
+    assert "devfolio" in job_registry.due_sources(now=any_moment)
 
 
-def test_devfolio_due_sources_excludes_devfolio_off_the_matching_minute():
-    for hour, minute in [(11, 59), (12, 1), (0, 0), (6, 0), (23, 59)]:
-        moment = datetime(2026, 9, 10, hour, minute, tzinfo=timezone.utc)
-        assert "devfolio" not in job_registry.due_sources(now=moment), (hour, minute)
+def test_devfolio_due_sources_excludes_devfolio_before_3_days_have_passed():
+    last_run = datetime(2026, 9, 10, 12, 0, tzinfo=UTC)
+    job_registry.record_run("devfolio", at=last_run)
+    deltas = (timedelta(seconds=1), timedelta(days=1), timedelta(days=2, hours=23, minutes=59))
+    try:
+        for delta in deltas:
+            moment = last_run + delta
+            assert "devfolio" not in job_registry.due_sources(now=moment), delta
+    finally:
+        job_registry._last_run_at.pop("devfolio", None)  # noqa: SLF001 -- test cleanup only
 
 
-def test_devpost_and_devfolio_do_not_collide_on_the_same_run_minute():
-    # Both hackathon sources are registered simultaneously (see
-    # app/ingestion/agents/sources/__init__.py) -- confirms their schedules
-    # don't accidentally share a matching minute, which would make
-    # /ingestion/run-due trigger both at once every day.
-    at_six = datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc)
-    at_noon = datetime(2026, 9, 10, 12, 0, tzinfo=timezone.utc)
+def test_devfolio_due_sources_includes_devfolio_once_3_days_have_passed():
+    last_run = datetime(2026, 9, 10, 12, 0, tzinfo=UTC)
+    job_registry.record_run("devfolio", at=last_run)
+    try:
+        exactly_3_days_later = last_run + timedelta(days=3)
+        assert "devfolio" in job_registry.due_sources(now=exactly_3_days_later)
+    finally:
+        job_registry._last_run_at.pop("devfolio", None)  # noqa: SLF001 -- test cleanup only
 
-    assert job_registry.due_sources(now=at_six) == ["devpost"]
-    assert job_registry.due_sources(now=at_noon) == ["devfolio"]
+
+def test_devpost_and_devfolio_schedules_are_independent():
+    # Devpost's cron schedule and Devfolio's interval schedule are governed
+    # by entirely different mechanisms now (clock-time-of-day vs. time-
+    # since-last-run) -- confirms checking one's due-ness at a moment that
+    # matches (or doesn't match) the OTHER's schedule shape has no
+    # crosstalk between the two sources' entries in the registry.
+    at_six_devfolio_never_run = datetime(2026, 9, 10, 6, 0, tzinfo=UTC)
+    assert set(job_registry.due_sources(now=at_six_devfolio_never_run)) == {"devpost", "devfolio"}
+
+    last_run = datetime(2026, 9, 10, 6, 0, tzinfo=UTC)
+    job_registry.record_run("devfolio", at=last_run)
+    try:
+        one_day_later_at_devpost_matching_minute = datetime(2026, 9, 11, 6, 0, tzinfo=UTC)
+        assert job_registry.due_sources(now=one_day_later_at_devpost_matching_minute) == ["devpost"]
+    finally:
+        job_registry._last_run_at.pop("devfolio", None)  # noqa: SLF001 -- test cleanup only
 
 
 # ---------------------------------------------------------------------------
@@ -106,17 +143,17 @@ def test_cron_06_00_utc_is_not_due_at_a_different_utc_hour_that_reads_06_00_loca
     # `should_run()`/`_cron_matches()` only ever look at the UTC wall-clock
     # fields of the `now` passed in (see `app.utils.time.utc_now()` -- every
     # real caller passes a UTC-aware datetime, never a local one).
-    ist_local_06_00_as_utc = datetime(2026, 9, 10, 0, 30, tzinfo=timezone.utc)
+    ist_local_06_00_as_utc = datetime(2026, 9, 10, 0, 30, tzinfo=UTC)
     assert should_run(schedule, last_run_at=None, now=ist_local_06_00_as_utc) is False
 
     # The genuine 06:00 UTC moment that same "day" (UTC) IS due.
-    actual_06_00_utc = datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc)
+    actual_06_00_utc = datetime(2026, 9, 10, 6, 0, tzinfo=UTC)
     assert should_run(schedule, last_run_at=None, now=actual_06_00_utc) is True
 
 
 def test_cron_06_00_utc_fires_again_the_next_day_after_a_run():
     schedule = ScheduleConfig.cron("0 6 * * *")
-    day_one = datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc)
+    day_one = datetime(2026, 9, 10, 6, 0, tzinfo=UTC)
     day_two = day_one + timedelta(days=1)
 
     # Already ran within this same matching minute.
@@ -127,8 +164,8 @@ def test_cron_06_00_utc_fires_again_the_next_day_after_a_run():
 
 def test_cron_06_00_utc_not_due_again_later_the_same_day():
     schedule = ScheduleConfig.cron("0 6 * * *")
-    ran_at = datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc)
-    later_same_day = datetime(2026, 9, 10, 14, 0, tzinfo=timezone.utc)
+    ran_at = datetime(2026, 9, 10, 6, 0, tzinfo=UTC)
+    later_same_day = datetime(2026, 9, 10, 14, 0, tzinfo=UTC)
 
     assert should_run(schedule, last_run_at=ran_at, now=later_same_day) is False
 
@@ -181,14 +218,14 @@ def test_job_registry_due_sources_skips_a_disabled_schedule():
     disabled = ScheduleConfig(kind="cron", cron_expression="0 6 * * *", enabled=False)
     registry.set("some-source", disabled)
 
-    at_six = datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc)
+    at_six = datetime(2026, 9, 10, 6, 0, tzinfo=UTC)
     assert registry.due_sources(now=at_six) == []
 
 
 def test_job_registry_remove_clears_both_schedule_and_last_run():
     registry = JobRegistry()
     registry.set("some-source", ScheduleConfig.every(60))
-    registry.record_run("some-source", at=datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc))
+    registry.record_run("some-source", at=datetime(2026, 9, 10, 6, 0, tzinfo=UTC))
 
     registry.remove("some-source")
 
