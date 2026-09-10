@@ -358,12 +358,21 @@ function StatusScreen({ children }) {
 
 // ---------- discover categories ----------
 
+// "For You" is back as the first category, but its real backend-ranked
+// recommendations aren't switched on yet (see FOR_YOU_LIVE below) -- it
+// shows a "Coming soon" pill (the same convention already used for the
+// not-yet-launched Career AI tabs further down) and, when clicked, a
+// static placeholder explaining it'll surface picks based on the user's
+// profile in a future release. Flip FOR_YOU_LIVE to true once the real
+// recommendation engine is ready to ship, and both the fetch effect and
+// the placeholder below switch over automatically.
+const FOR_YOU_LIVE = false;
 const categories = [
-  { key: 'for-you', label: 'For You', icon: icons.star, desc: 'Matches curated from your skills, interests, and goals.', featured: true },
+  { key: 'for-you', label: 'For You', icon: icons.star, desc: 'Matches curated from your skills, interests, and goals.', comingSoon: true },
   { key: 'programs', label: 'Programs', icon: icons.cap, desc: 'Ambassador programs, summer schools, and student initiatives.' },
+  { key: 'learning-hub', label: 'Learning Hub', icon: icons.book, desc: "Explore official learning platforms from the world's leading companies" },
   { key: 'hackathons', label: 'Hackathons', icon: icons.trophy, desc: 'Build fast, ship prototypes, win prizes.' },
   { key: 'certifications', label: 'Certifications', icon: icons.ribbon, desc: 'Credentials that strengthen your profile.' },
-  { key: 'learning-hub', label: 'Learning Hub', icon: icons.book, desc: "Explore official learning platforms from the world's leading companies" },
   { key: 'communities', label: 'Communities', icon: icons.users2, desc: 'Groups and networks to grow alongside.' },
   { key: 'events', label: 'Events', icon: icons.calendarLg, desc: 'Conferences, meetups, and webinars.' },
   { key: 'applied', label: 'Applied', icon: icons.check, desc: "Opportunities you've marked as applied." },
@@ -955,6 +964,7 @@ function SidebarContentBody({ items, sectionLabel, initialKey, mode, profile, sa
   // there's no separate error UI to wire for this — same graceful-fallback
   // shape as the rest of this component.
   useEffect(() => {
+    if (!FOR_YOU_LIVE) return;
     if (mode !== 'opportunities') return;
     if (active !== 'for-you') return;
     if (forYouFetchStarted.current) return;
@@ -1338,6 +1348,20 @@ function SidebarContentBody({ items, sectionLabel, initialKey, mode, profile, sa
           <Suspense fallback={<PaneLoadingFallback />}>
             <LearningJourney />
           </Suspense>
+        ) : mode === 'opportunities' && active === 'for-you' && !FOR_YOU_LIVE ? (
+          // Same idea as the certifications/learning-hub branches above:
+          // shared header stays, only the body below it is swapped out --
+          // here for a static "coming soon" placeholder instead of the
+          // plain opportunity grid, since the real recommendation engine
+          // isn't switched on yet (FOR_YOU_LIVE, declared above). Remove
+          // this branch (or flip that flag) once it's ready, and this tab
+          // falls straight through to the normal grid below, same as any
+          // other category.
+          <div className="mt-3 flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-[20px] border border-dashed border-white/70 bg-white/40 px-6 py-10 text-center">
+            <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${accentBadgeCls}`}>Coming soon</span>
+            <p className="max-w-sm text-[12.5px] font-semibold text-[#7a7a76]">For You isn&apos;t live yet. In an upcoming release, it&apos;ll show opportunities picked specifically for you, based on your profile.</p>
+            <a href="/profile" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#161616] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#2a2a2a]">Complete your profile</a>
+          </div>
         ) : mode === 'opportunities' ? (
           <div ref={contentScrollRef} className="custom-scroll mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-1 pr-2 pt-2">
             {isLoading && (
@@ -2502,7 +2526,7 @@ function AppShell({ view: initialView }) {
         <div className="relative mt-5 min-h-0 flex-1">
 
           <div className={`absolute inset-0 flex flex-col transform-gpu ${isDiscover ? 'z-10' : 'pointer-events-none opacity-0'}`}>
-            <SidebarContentBodyMemo items={categories} sectionLabel="Categories" initialKey="for-you" mode="opportunities" profile={profile} savedIds={savedIds} onToggleSaved={toggleSaved} appliedIds={appliedIds} onToggleApplied={toggleApplied} pendingAppliedIds={pendingAppliedIds} />
+            <SidebarContentBodyMemo items={categories} sectionLabel="Categories" initialKey="programs" mode="opportunities" profile={profile} savedIds={savedIds} onToggleSaved={toggleSaved} appliedIds={appliedIds} onToggleApplied={toggleApplied} pendingAppliedIds={pendingAppliedIds} />
           </div>
           <div className={`absolute inset-0 flex flex-col transform-gpu ${isCareerAi ? 'z-10' : 'pointer-events-none opacity-0'}`}>
             <SidebarContentBodyMemo items={careerAiOptions} sectionLabel="Tools" initialKey="ai-coach" profile={profile} locked />
