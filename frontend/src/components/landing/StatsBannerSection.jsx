@@ -126,19 +126,25 @@ function StatsBannerSection() {
             either side of it; clamp lets both numbers shrink to fit a narrow
             row instead of forcing horizontal overflow. */}
         <div className="flex items-center gap-6 sm:gap-10 md:gap-14">
-           {/* Rating */}
-           <div className="flex flex-col items-center">
-             <div className="text-[clamp(2.1rem,7vw,3.2rem)] font-medium leading-none tracking-tight mb-2">4.8</div>
-             <div className="text-[1.05rem] opacity-80">Rating</div>
+           {/* Built for Students, by Design — a positioning statement
+               rather than a number, so it doesn't use the big-numeral
+               treatment the other two stats use (a phrase at that size
+               would either overflow the row on a phone or force an ugly
+               wrap); a smaller bold line + the same opacity-80 subtitle
+               style the other stats use for their label keeps it visually
+               part of the same row without pretending to be a number. */}
+           <div className="flex flex-col items-center text-center">
+             <div className="text-[1.3rem] sm:text-[1.5rem] font-semibold leading-snug tracking-tight mb-2">Built for Students</div>
+             <div className="text-[1.05rem] opacity-80">by Design</div>
            </div>
 
            {/* Divider */}
            <div className="w-[1.5px] h-20 bg-[#0B1536]/20" />
 
-           {/* Roles filled */}
+           {/* Programs listed */}
            <div className="flex flex-col items-center">
-             <div className="text-[clamp(2.1rem,7vw,3.2rem)] font-medium leading-none tracking-tight mb-2">15,000+</div>
-             <div className="text-[1.05rem] opacity-80">Roles filled</div>
+             <div className="text-[clamp(2.1rem,7vw,3.2rem)] font-medium leading-none tracking-tight mb-2">1,000+</div>
+             <div className="text-[1.05rem] opacity-80">Programs Listed</div>
            </div>
         </div>
 
@@ -167,7 +173,7 @@ function StatsBannerSection() {
           />
         </h2>
         <p className="mt-4 text-[0.95rem] font-medium text-[#7f879d]">
-          From first internships to full-time offers, OwnMove pairs real opportunities with real guidance — not just a job board.
+          OwnMove pairs real opportunities with an AI Coach that actually knows your profile — not just another job board.
         </p>
       </div>
 

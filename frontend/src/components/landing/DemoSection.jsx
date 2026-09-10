@@ -408,7 +408,7 @@ function DemoSection() {
         </div>
 
         {/* Content Layout */}
-        <div className="flex flex-col items-center justify-between gap-x-10 gap-y-12 lg:flex-row lg:items-center lg:gap-x-14">
+        <div className="flex flex-col items-center justify-between gap-x-10 gap-y-8 sm:gap-y-12 lg:flex-row lg:items-center lg:gap-x-14">
 
           {/* Left: Programs Grid — fixed height matching the other two
               columns, with the list scrolling internally. Before,
@@ -478,7 +478,7 @@ function DemoSection() {
           </div>
 
           {/* Center: Drag Target Canvas with Concentric Radiating Rings */}
-          <div className="relative flex w-full max-w-[400px] flex-col items-center justify-center min-h-[400px]">
+          <div className="relative flex w-full max-w-[400px] flex-col items-center justify-center min-h-[220px] lg:min-h-[400px]">
 
             {/* Center Canvas */}
 
@@ -560,7 +560,7 @@ function DemoSection() {
 
           {/* Right: Program Preview */}
           <div className="w-full lg:w-[480px]">
-            <div className={`relative h-full w-full rounded-[20px] transition-colors duration-700 p-8 sm:p-10 min-h-[560px] flex flex-col overflow-hidden border ${
+            <div className={`relative h-full w-full rounded-[20px] transition-colors duration-700 p-8 sm:p-10 min-h-[320px] lg:min-h-[560px] flex flex-col overflow-hidden border ${
               draggingId ? 'bg-[#272a3f] border-[#3a3d58] shadow-2xl' : 'bg-white text-[#1f2937] shadow-[0_30px_70px_rgba(11,23,75,0.08)] border-[#e5e7eb]'
             }`}>
               {/* This corner wash was a plain mint-green that doesn't appear
