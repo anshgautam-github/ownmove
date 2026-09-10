@@ -2362,7 +2362,14 @@ function AppShell({ view: initialView }) {
         ))}
       </nav>
 
-      <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col px-6 pb-20 pt-5 sm:px-10 sm:pb-6 sm:pt-6">
+      {/* `pb-20` (80px) below `sm` was sized to just barely clear the fixed
+          bottom tab bar's own height — enough that content isn't hidden
+          behind it, but with no real breathing room, so a scrolled card
+          list ran right up to the bar with nothing in between. `pb-28`
+          leaves a clearly visible gap above the bar instead; `sm:pb-6` is
+          unchanged since the bottom tab bar itself is `md:hidden` and
+          doesn't exist to clear from `sm` up. */}
+      <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col px-6 pb-28 pt-5 sm:px-10 sm:pb-6 sm:pt-6">
         {/* Top nav */}
         <header className="flex shrink-0 items-center justify-between gap-4">
           <div className="flex items-end gap-3">
