@@ -361,9 +361,22 @@ function IntelligenceSection() {
               MacBook's finish (and to pop against the light page background) */}
           <div className="relative rounded-[28px] bg-[linear-gradient(175deg,#f6f7f9_0%,#e2e3e8_14%,#c7c9d0_42%,#aeb0b8_70%,#94969f_100%)] p-[3px] shadow-[0_40px_70px_-24px_rgba(20,18,40,0.3)] sm:rounded-[32px] sm:p-[5px]">
             {/* thick black glass bezel */}
-            <div className="relative overflow-hidden rounded-[24px] bg-[#0a0a0d] px-4 pb-4 pt-7 sm:rounded-[28px] sm:px-5 sm:pb-5 sm:pt-9">
-              {/* camera notch, cut into the very top of the glass */}
-              <div className="absolute left-1/2 top-0 z-30 flex h-[15px] w-[100px] -translate-x-1/2 items-center justify-center rounded-b-[11px] bg-[#050506] ring-1 ring-white/[0.06] sm:h-[18px] sm:w-[124px]">
+            <div className="relative overflow-hidden rounded-[24px] bg-[#0a0a0d] px-4 pb-4 pt-3.5 sm:rounded-[28px] sm:px-5 sm:pb-5 sm:pt-9">
+              {/* camera notch, cut into the very top of the glass — hidden
+                  below `sm`. This mockup is a MacBook, and on a phone the
+                  whole point was already lost: a real laptop is landscape,
+                  the content inside is naturally tall (five categories,
+                  a full chat exchange), and squeezing that into a portrait
+                  phone width turned "MacBook screen" into an oddly thin,
+                  stretched-looking column. The camera notch and the full
+                  macOS menu bar below are the two most laptop-specific
+                  tells — a phone visitor seeing literal Mac chrome
+                  (Finder, Wi-Fi/battery icons) around a website is its own
+                  small mismatch on top of that. Dropping both below `sm`
+                  and keeping just the plain browser toolbar (traffic
+                  lights + url pill, which reads as "a website" on any
+                  device) leaves a clean, proportionate card instead. */}
+              <div className="absolute left-1/2 top-0 z-30 hidden h-[18px] w-[124px] -translate-x-1/2 items-center justify-center rounded-b-[11px] bg-[#050506] ring-1 ring-white/[0.06] sm:flex">
                 <span className="h-[4px] w-[4px] rounded-full bg-[#171b26] ring-1 ring-white/10">
                   <span className="block h-[2px] w-[2px] translate-x-[1px] translate-y-[1px] rounded-full bg-white/25" />
                 </span>
@@ -374,8 +387,12 @@ function IntelligenceSection() {
                 {/* faint glass glare across the glass, purely decorative */}
                 <div className="pointer-events-none absolute inset-0 z-20 bg-[linear-gradient(115deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0)_26%)]" />
 
-                {/* macOS menu bar */}
-                <div className="relative z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#131417]/95 px-4 py-1.5 text-[11px] font-medium text-white/72 sm:px-5">
+                {/* macOS menu bar — hidden below `sm`, see the notch
+                    comment above for why. The glass bezel's own top
+                    padding was sized to clear this bar plus the notch;
+                    it's a plain `pt-3.5` below `sm` now that neither is
+                    there to clear. */}
+                <div className="relative z-10 hidden items-center justify-between border-b border-white/[0.06] bg-[#131417]/95 px-4 py-1.5 text-[11px] font-medium text-white/72 sm:flex sm:px-5">
                   <div className="flex items-center gap-3.5 sm:gap-4">
                     <AppleGlyph className="h-3 w-3 text-white/85" />
                     <span className="font-semibold text-white/92">Finder</span>
@@ -413,7 +430,7 @@ function IntelligenceSection() {
                   <span className="hidden text-[15px] leading-none text-white/25 sm:inline">+</span>
                 </div>
 
-                <div className="relative px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-7">
+                <div className="relative px-3.5 pb-4 pt-3.5 sm:px-6 sm:pb-6 lg:px-7">
                 {/* Mobile: a compact dropdown instead of 5 stacked cards --
                     below the `sm` breakpoint the grid below falls back to a
                     single column, and five full-width cards eat the whole
@@ -483,7 +500,7 @@ function IntelligenceSection() {
                   <div className="intelligence-grid absolute inset-0 opacity-40" />
 
                   <div className="relative mx-auto max-w-[1120px]">
-                    <div className="intelligence-panel intelligence-panel-accent intelligence-panel-glow relative overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,28,0.98)_0%,rgba(18,22,42,0.96)_100%)] px-5 pb-5 pt-5 shadow-[0_20px_52px_rgba(8,8,20,0.38)] sm:px-7 lg:px-9">
+                    <div className="intelligence-panel intelligence-panel-accent intelligence-panel-glow relative overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,28,0.98)_0%,rgba(18,22,42,0.96)_100%)] px-4 pb-4 pt-4 shadow-[0_20px_52px_rgba(8,8,20,0.38)] sm:px-7 sm:pb-5 sm:pt-5 lg:px-9">
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-[linear-gradient(180deg,rgba(11,14,28,0),rgba(10,12,24,0.84))]" />
                       <div className="mx-auto max-w-[680px]">
                         <div className="flex justify-end">
@@ -495,7 +512,7 @@ function IntelligenceSection() {
                           </div>
                         </div>
 
-                        <div className="mt-4 rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-5 py-4 shadow-[0_16px_32px_rgba(10,10,26,0.2)] backdrop-blur-xl">
+                        <div className="mt-3 rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3.5 shadow-[0_16px_32px_rgba(10,10,26,0.2)] backdrop-blur-xl sm:mt-4 sm:px-5 sm:py-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[linear-gradient(180deg,#8370ff,#4450ff)] text-xs font-semibold text-white shadow-[0_10px_24px_rgba(68,80,255,0.24)]">
@@ -544,7 +561,7 @@ function IntelligenceSection() {
                             </div>
                           </div>
 
-                          <div className="mt-4 min-h-[112px] border-t border-white/8 pt-4 text-[clamp(0.88rem,0.92vw,0.96rem)] leading-[1.6] text-white/74">
+                          <div className="mt-3 min-h-[96px] border-t border-white/8 pt-3 text-[clamp(0.88rem,0.92vw,0.96rem)] leading-[1.6] text-white/74 sm:mt-4 sm:min-h-[112px] sm:pt-4">
                             {activeContent.paragraphs.map((paragraph, index) => (
                               <p key={index} className={index === 1 ? 'mt-3' : ''}>
                                 <strong>{paragraph.lead}</strong>

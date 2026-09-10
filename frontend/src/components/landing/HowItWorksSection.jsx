@@ -476,6 +476,22 @@ function HowItWorksSection() {
                               overflowY: 'auto',
                               WebkitOverflowScrolling: 'touch',
                               overscrollBehavior: 'contain',
+                              // Without this, a touch-drag that starts on the
+                              // card is ambiguous between "scroll my overflow
+                              // content" and "advance the pinned scroll-jack"
+                              // (the whole section drives its crossfade off
+                              // window scroll position, see `updateProgress`
+                              // above) -- and mobile browsers tend to resolve
+                              // that ambiguity in favor of the outer/window
+                              // scroll, so the card's own overflow never
+                              // moves and a CTA below the fold stays
+                              // unreachable by touch. `pan-y` tells the
+                              // browser up front that this element owns
+                              // vertical panning gestures itself, so touch
+                              // scrolling here reliably scrolls the card
+                              // (and only falls through to the window once
+                              // the card hits its own top/bottom).
+                              touchAction: 'pan-y',
                             }
                           : undefined
                       }

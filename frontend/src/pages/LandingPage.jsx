@@ -104,24 +104,6 @@ function HeroWorkTransition() {
           <HeroSection />
         </div>
 
-        {/* Desktop's scroll-jack crossfades WorkAi in over Hero, so there's
-            nothing to mark; below lg the two sections just meet at a flat
-            seam. This small ringed medallion sits right on that seam (half
-            over each section) echoing the same concentric-ring motif as the
-            hero's own orbit visual, so the handoff reads as a deliberate
-            beat rather than a bare edge. It has no layout height of its own
-            (the circle is absolutely positioned off a zero-height anchor),
-            so it never pushes WorkAi down. */}
-        {!isDesktop && (
-          <div className="relative z-30 flex justify-center" aria-hidden="true">
-            <div className="absolute -top-9 flex h-[72px] w-[72px] items-center justify-center rounded-full border border-white bg-white shadow-[0_14px_34px_rgba(23,19,33,0.16)]">
-              <span className="absolute inset-[7px] rounded-full border border-[#171321]/12" />
-              <span className="absolute inset-[16px] rounded-full border border-[#171321]/12" />
-              <img src="/logo.svg" alt="" className="relative z-10 h-7 w-7 object-contain" />
-            </div>
-          </div>
-        )}
-
         <div
           className={
             isDesktop
