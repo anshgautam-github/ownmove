@@ -548,6 +548,11 @@ function OpportunityCard({ item, matched, saved, onToggleSaved, applied, onToggl
   // alike) makes that obvious instead of leaving the same bookmark glyph
   // in both its "save" and "remove" states.
   const [saveHovered, setSaveHovered] = useState(false);
+  // Description preview used to be hover-only, which doesn't exist on a
+  // touchscreen. Tapping the row now toggles this instead, alongside
+  // (not instead of) the CSS :hover reveal, so desktop keeps working
+  // exactly as before while touch devices get an explicit tap target.
+  const [showDescription, setShowDescription] = useState(false);
   const deadlineLabel = formatDate(item.deadline);
   const postedLabel = timeAgo(item.postedAt);
   const eligibleYearsLabel = (item.eligibleYears || []).length > 0 ? item.eligibleYears.join(', ') : '';
@@ -643,25 +648,57 @@ function OpportunityCard({ item, matched, saved, onToggleSaved, applied, onToggl
         {item.description && (
           <div className="group/desc flex items-center gap-2 pl-9">
             <span className="shrink-0 text-[9.5px] font-black uppercase tracking-wide text-[#9a9a97]">Description</span>
-            <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#5c4fd8]/80">
-              {icons.info}
-              Hover to preview
-            </span>
-
-            {/* Description pop-out: only this row's own hover
-                (`group/desc`) drives it now, not the whole card's — it
-                still fills the same pill footprint as before (`inset-0`
-                resolves against the pill container above, the nearest
-                *positioned* ancestor; this row itself is left
-                unpositioned in flow so it doesn't become that
-                container), it just no longer fires just from hovering
-                somewhere else on the card. */}
-            <div
-              className="pointer-events-none absolute inset-0 z-20 flex origin-center scale-95 -translate-y-1 flex-col gap-1.5 overflow-hidden rounded-[16px] border border-white/80 bg-[linear-gradient(165deg,rgba(255,255,255,0.98)_0%,rgba(250,248,255,0.96)_100%)] p-3.5 opacity-0 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_20px_40px_-16px_rgba(101,89,227,0.35)] ring-1 ring-[#7b62e8]/[0.14] transition-all duration-300 ease-out group-hover/desc:pointer-events-auto group-hover/desc:translate-y-0 group-hover/desc:scale-100 group-hover/desc:opacity-100"
+            {/* Hover-only text/behavior doesn't exist on touch devices, so
+                this is now also a real tap target: onClick toggles
+                `showDescription`, which the pop-out below responds to in
+                addition to (not instead of) the CSS :hover reveal. The
+                label itself swaps between "Hover to preview" and "Tap to
+                preview" based on the (hover: hover) media feature, since
+                that's a more reliable signal than screen width for whether
+                a pointing device is actually available. */}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowDescription((open) => !open); }}
+              aria-expanded={showDescription}
+              className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#5c4fd8]/80"
             >
-              <p className="flex shrink-0 items-center gap-1.5 text-[9.5px] font-black uppercase tracking-wide text-[#7b62e8]">
-                {icons.info}
-                Description
+              {icons.info}
+              <span className="hidden [@media(hover:hover)]:inline">Hover to preview</span>
+              <span className="inline [@media(hover:hover)]:hidden">Tap to preview</span>
+            </button>
+
+            {/* Description pop-out: this row's own hover (`group/desc`)
+                drives it on devices that support hover, and the
+                `showDescription` tap-toggle above drives it on touch
+                devices — it still fills the same pill footprint as before
+                (`inset-0` resolves against the pill container above, the
+                nearest *positioned* ancestor; this row itself is left
+                unpositioned in flow so it doesn't become that container).
+                stopPropagation on the whole thing keeps a tap anywhere in
+                the open pop-out (scrolling the text, hitting close) from
+                also bubbling up to the card's own onClick and opening the
+                listing underneath it. */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={`pointer-events-none absolute inset-0 z-20 flex origin-center scale-95 -translate-y-1 flex-col gap-1.5 overflow-hidden rounded-[16px] border border-white/80 bg-[linear-gradient(165deg,rgba(255,255,255,0.98)_0%,rgba(250,248,255,0.96)_100%)] p-3.5 opacity-0 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_20px_40px_-16px_rgba(101,89,227,0.35)] ring-1 ring-[#7b62e8]/[0.14] transition-all duration-300 ease-out group-hover/desc:pointer-events-auto group-hover/desc:translate-y-0 group-hover/desc:scale-100 group-hover/desc:opacity-100 ${showDescription ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : ''}`}
+            >
+              <p className="flex shrink-0 items-center justify-between gap-1.5 text-[9.5px] font-black uppercase tracking-wide text-[#7b62e8]">
+                <span className="flex items-center gap-1.5">
+                  {icons.info}
+                  Description
+                </span>
+                {/* Only needed on touch — there's no hover-out to close the
+                    pop-out with, so it needs its own explicit dismiss.
+                    Hidden on hover-capable devices, where mousing away
+                    already closes it. */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setShowDescription(false); }}
+                  aria-label="Close preview"
+                  className="-m-1 hidden h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#9a9a97] transition hover:text-[#4a4a48] [@media(hover:none)]:flex"
+                >
+                  {icons.close}
+                </button>
               </p>
               <div className="custom-scroll min-h-0 flex-1 overflow-y-auto pr-1 text-[11.5px] font-semibold leading-relaxed text-[#4a4a48]">
                 {item.description}
