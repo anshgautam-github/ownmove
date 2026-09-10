@@ -2316,7 +2316,13 @@ function AppShell({ view: initialView }) {
   const useLandingTheme = isDiscover || isCareerAi || isProfile;
 
   return (
-    <div className={`relative h-screen overflow-hidden text-[#1a1a1a] ${useLandingTheme ? 'bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)]' : 'bg-[#eaeae7]'}`}>
+    // `h-dvh`, not `h-screen` (= a flat 100vh): on mobile Safari/Chrome the
+    // address bar shows and hides as you scroll, and 100vh is sized for
+    // the *largest* case (bar hidden) — so a chunk of every pane's bottom
+    // content (the Learning Hub info card included) was sitting behind
+    // real browser chrome and getting visually trimmed. `dvh` tracks the
+    // actual visible viewport instead.
+    <div className={`relative h-dvh overflow-hidden text-[#1a1a1a] ${useLandingTheme ? 'bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)]' : 'bg-[#eaeae7]'}`}>
       {/* ambient wash so the glass has color to refract. Promoted to its own
           GPU layer (transform-gpu) and marked static so the expensive large
           blurs are painted once and never re-rendered when panes switch. */}

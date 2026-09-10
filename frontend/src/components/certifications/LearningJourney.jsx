@@ -178,8 +178,15 @@ export default function LearningJourney() {
       {/* One evenly-spaced grid — same tile size, same alignment, for every
           platform — reads as a clean, deliberate shelf of options rather
           than a scattered pile. No connecting lines between tiles, since
-          these are independent platforms with no real relationship. */}
-      <div className="grid grid-cols-2 gap-3 rounded-[24px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0.3)_100%)] p-4 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.9)] backdrop-blur-xl sm:grid-cols-4 sm:gap-4 sm:p-5 lg:grid-cols-7">
+          these are independent platforms with no real relationship.
+          Below `sm`, picking one used to leave all ~14 tiles in place
+          above the info card, so seeing the info meant scrolling past the
+          entire shelf first — this now collapses the grid to just the
+          compact "selected platform" row underneath once something's
+          active, so the info card sits right below it instead. sm+ always
+          shows the full grid (there's room for both there, and the active
+          tile's own ring already marks the selection). */}
+      <div className={`grid-cols-2 gap-3 rounded-[24px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0.3)_100%)] p-4 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.9)] backdrop-blur-xl sm:grid sm:grid-cols-4 sm:gap-4 sm:p-5 lg:grid-cols-7 ${active ? 'hidden' : 'grid'}`}>
         {learningJourney.map((checkpoint) => (
           <CheckpointTile
             key={checkpoint.id}
@@ -189,6 +196,30 @@ export default function LearningJourney() {
           />
         ))}
       </div>
+
+      {/* Compact "selected platform" row — only shown below `sm`, and only
+          once a platform is active (sm+ relies on the full grid above
+          instead, which never collapses there). Tapping it clears the
+          selection so the full grid comes back and a different platform
+          can be picked, without needing to scroll back up past the info
+          card first. */}
+      {active && (
+        <button
+          type="button"
+          onClick={() => setActiveId(null)}
+          className="flex shrink-0 items-center gap-3 rounded-2xl border border-white/70 bg-white/70 p-3 text-left backdrop-blur-xl sm:hidden"
+          style={{ boxShadow: `0 0 0 2px ${active.accent}55, inset 0 1px 0 rgba(255,255,255,0.9)` }}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-white/90">
+            <CheckpointLogo iconSlug={active.iconSlug} domain={active.domain} alt={active.company} fallbackLabel={active.fallbackLabel} accent={active.accent} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <p className="truncate text-[12.5px] font-black leading-tight text-[#1a1a1a]">{active.company}</p>
+            <p className="text-[10.5px] font-semibold text-[#8a8a86]">Tap to choose a different platform</p>
+          </span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-[#9a9a97]"><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+      )}
 
       {/* Floating info card */}
       <AnimatePresence mode="wait">
