@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../services/supabase/client';
+import { safeSetItem } from '../../utils/safeStorage';
 
 // Same pattern DemoSection's "Explore More" button already uses: check for a
 // live session, and either go straight to the destination or stash it as
@@ -20,7 +21,7 @@ async function goToDashboard(target) {
   if (data.session) {
     window.location.assign(target);
   } else {
-    localStorage.setItem('postLoginRedirect', target);
+    safeSetItem('postLoginRedirect', target);
     window.dispatchEvent(new CustomEvent('open-auth', { detail: 'login' }));
   }
 }

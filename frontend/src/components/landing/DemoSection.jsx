@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { supabase } from '../../services/supabase/client';
+import { safeSetItem } from '../../utils/safeStorage';
 
 // This section is not a job board — it surfaces credible programs,
 // fellowships, student communities, ambassador programs, open-source
@@ -393,7 +394,7 @@ function DemoSection() {
               if (data.session) {
                 window.location.assign('/discover#programs');
               } else {
-                localStorage.setItem('postLoginRedirect', '/discover#programs');
+                safeSetItem('postLoginRedirect', '/discover#programs');
                 window.dispatchEvent(new CustomEvent('open-auth', { detail: 'login' }));
               }
             }}

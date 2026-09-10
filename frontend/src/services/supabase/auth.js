@@ -1,5 +1,6 @@
 import { supabase } from './client';
 import { loadOnboardingProfile } from './profiles';
+import { safeGetItem, safeRemoveItem } from '../../utils/safeStorage';
 
 // Thin wrapper so callers can distinguish "Supabase rejected this" from any
 // other kind of failure, and so AuthDialog never has to parse raw Supabase
@@ -92,9 +93,9 @@ export async function signInWithEmail({ email, password }) {
 // straight to Discover and first-timers go to onboarding. Shared here so
 // email/password sign-in lands users in exactly the same place OAuth would.
 export async function resolvePostAuthRedirect() {
-  const redirect = localStorage.getItem('postLoginRedirect');
+  const redirect = safeGetItem('postLoginRedirect');
   if (redirect) {
-    localStorage.removeItem('postLoginRedirect');
+    safeRemoveItem('postLoginRedirect');
     return redirect;
   }
 
