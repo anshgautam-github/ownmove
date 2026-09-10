@@ -361,9 +361,9 @@ const categories = [
   { key: 'programs', label: 'Programs', icon: icons.cap, desc: 'Ambassador programs, summer schools, and student initiatives.' },
   { key: 'learning-hub', label: 'Learning Hub', icon: icons.book, desc: "Explore official learning platforms from the world's leading companies" },
   { key: 'hackathons', label: 'Hackathons', icon: icons.trophy, desc: 'Build fast, ship prototypes, win prizes.' },
+  { key: 'events', label: 'Events', icon: icons.calendarLg, desc: 'Conferences, meetups, and webinars.' },
   { key: 'certifications', label: 'Certifications', icon: icons.ribbon, desc: 'Credentials that strengthen your profile.' },
   { key: 'communities', label: 'Communities', icon: icons.users2, desc: 'Groups and networks to grow alongside.' },
-  { key: 'events', label: 'Events', icon: icons.calendarLg, desc: 'Conferences, meetups, and webinars.' },
   { key: 'applied', label: 'Applied', icon: icons.check, desc: "Opportunities you've marked as applied." },
 ];
 
