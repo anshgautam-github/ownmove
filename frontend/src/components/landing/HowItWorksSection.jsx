@@ -249,17 +249,42 @@ function HowItWorksVisual({ type, cta }) {
 
 function HowItWorksSection() {
   const sectionRef = useRef(null)
+  const cardRefs = useRef([])
   const [progress, setProgress] = useState(0)
-  // Below the lg breakpoint the 2-column card grid collapses to a single
-  // stacked column, and a card's text block + device mockup stacked on top
-  // of each other no longer fit inside the fixed 560px stage this
-  // scroll-jacked pin animation was built around — the content would get
-  // clipped by the stage's overflow-hidden. So the pin/crossfade is
-  // desktop-only; below lg, cards render as a plain stacked list that
-  // scrolls normally (no clipping, no dependency on the scroll math below).
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   )
+  // Below `lg` the pin/crossfade animation used to be switched off entirely,
+  // because the 2-column desktop layout collapses to one stacked column —
+  // a card's text block + device mockup no longer fit inside the fixed
+  // 560px stage the animation was built around, so the stage's
+  // `overflow-hidden` would clip it. Cards just rendered as a plain long
+  // stacked list instead, which is correct but means a LOT of scrolling to
+  // get through every card on a phone.
+  //
+  // Rather than drop the animation below `lg`, `mobileStageHeight` measures
+  // the tallest card's REAL rendered height while cards are still in
+  // normal, unpositioned document flow, and that measured height becomes
+  // the stage size instead of the desktop's hardcoded 560px — so the exact
+  // same pin/crossfade mechanic works at any width without clipping
+  // anything. It starts out `null` (not yet measured); until it's set,
+  // cards render in plain stacked flow, which doubles as both a safe
+  // first-paint fallback and the very layout the measurement below reads.
+  const [mobileStageHeight, setMobileStageHeight] = useState(null)
+
+  // On mobile the sticky pinned frame (`h-[100svh]`) also has to hold the
+  // heading text above the card stage, and phones have far less spare
+  // height than desktop to begin with -- so the stage can't just use
+  // whatever height the tallest card naturally wants (mobileStageHeight
+  // above). These refs/state measure how much room is actually left for
+  // the stage once the heading and paddings are accounted for, so the
+  // stage never claims more height than the pinned frame can show; see
+  // stageHeightPx and the how-neon-card overflow-y fallback below for how
+  // this is used.
+  const stickyRef = useRef(null)
+  const headingRef = useRef(null)
+  const pinnedContainerRef = useRef(null)
+  const [mobileAvailableHeight, setMobileAvailableHeight] = useState(null)
 
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 1024px)')
@@ -270,7 +295,63 @@ function HowItWorksSection() {
   }, [])
 
   useEffect(() => {
-    if (!isDesktop) return undefined
+    if (isDesktop) return undefined
+
+    const measure = () => {
+      const heights = cardRefs.current.map((node) => node?.offsetHeight ?? 0)
+      const tallest = Math.max(0, ...heights)
+      if (tallest > 0) setMobileStageHeight(tallest)
+
+      // How much vertical room the pinned frame has left for the stage,
+      // after the heading block and the container's own top/bottom padding
+      // -- read via getComputedStyle rather than hardcoded so it stays
+      // correct if the padding classes above ever change.
+      const stickyNode = stickyRef.current
+      const containerNode = pinnedContainerRef.current
+      const headingNode = headingRef.current
+      if (stickyNode && containerNode && headingNode) {
+        const containerStyle = window.getComputedStyle(containerNode)
+        const topPad = parseFloat(containerStyle.paddingTop) || 0
+        const bottomPad = parseFloat(containerStyle.paddingBottom) || 0
+        const stageTopGap = 20 // matches the mobile-only marginTop override on
+                                // the stage wrapper below (mt-12/48px only
+                                // applies on desktop / before the pin kicks in).
+        const reserved = topPad + headingNode.offsetHeight + stageTopGap + bottomPad
+        const available = Math.max(stickyNode.clientHeight - reserved, 220)
+        setMobileAvailableHeight(available)
+      }
+    }
+
+    // Measure now, and once more a tick later once icons/mockups inside the
+    // cards have finished their own layout (fonts/images can still be
+    // reflowing on the very first paint) -- then keep it correct across
+    // resizes and orientation changes.
+    measure()
+    const raf = requestAnimationFrame(measure)
+    window.addEventListener('resize', measure)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', measure)
+    }
+  }, [isDesktop])
+
+  // The pin/crossfade only has a stage to animate within once we know how
+  // tall it should be: always true on desktop (fixed 560px), and on
+  // smaller screens only once mobileStageHeight has actually been measured.
+  const canAnimate = isDesktop || mobileStageHeight !== null
+  // Never let the stage claim more height than the pinned frame actually
+  // has once the heading above it is accounted for -- a card taller than
+  // this still shows everything (including its CTA button), it just
+  // scrolls internally instead of being clipped by the stage's own
+  // overflow-hidden (see the how-neon-card style below).
+  const stageHeightPx = isDesktop
+    ? 560
+    : mobileAvailableHeight !== null
+      ? Math.min(mobileStageHeight, mobileAvailableHeight)
+      : mobileStageHeight
+
+  useEffect(() => {
+    if (!canAnimate) return undefined
 
     const updateProgress = () => {
       const node = sectionRef.current
@@ -291,7 +372,7 @@ function HowItWorksSection() {
       window.removeEventListener('scroll', updateProgress)
       window.removeEventListener('resize', updateProgress)
     }
-  }, [isDesktop])
+  }, [canAnimate])
 
   return (
     <div className="floating-top-edge floating-top-edge-light relative z-20 -mt-12 rounded-t-[38px] shadow-[0_-24px_60px_rgba(82,95,180,0.08)] sm:-mt-16 sm:rounded-t-[52px]">
@@ -303,23 +384,47 @@ function HowItWorksSection() {
         id="how-it-works"
         ref={sectionRef}
         className="relative bg-[linear-gradient(180deg,#ffffff_0%,#f7f7ff_100%)] text-[#1a215a]"
-        style={isDesktop ? { minHeight: `${howItWorksCards.length * 100}vh` } : undefined}
+        style={canAnimate ? { minHeight: `${howItWorksCards.length * 100}vh` } : undefined}
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(127,116,255,0.08),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,247,255,0.98))]" />
 
-        <div className="flex items-start lg:sticky lg:top-0 lg:h-[100svh] lg:overflow-hidden">
-          <div className="relative mx-auto w-full max-w-[1220px] px-6 pb-14 pt-20 sm:px-10 sm:pb-16 sm:pt-24 lg:px-12">
-            <div className="mx-auto max-w-[760px] text-center">
-              <div className="text-[clamp(3rem,5.2vw,5.1rem)] font-medium leading-[0.94] tracking-[-0.07em] text-[#1c2565]">
+        <div
+          ref={stickyRef}
+          className={`flex items-start ${canAnimate ? 'sticky top-0 h-[100svh] overflow-hidden' : ''}`}
+        >
+          <div
+            ref={pinnedContainerRef}
+            className="relative mx-auto w-full max-w-[1220px] px-6 pb-14 pt-20 sm:px-10 sm:pb-16 sm:pt-24 lg:px-12"
+            style={canAnimate && !isDesktop ? { paddingTop: '1.5rem', paddingBottom: '1.5rem' } : undefined}
+          >
+            <div ref={headingRef} className="mx-auto max-w-[760px] text-center">
+              <div
+                className="text-[clamp(3rem,5.2vw,5.1rem)] font-medium leading-[0.94] tracking-[-0.07em] text-[#1c2565]"
+                style={canAnimate && !isDesktop ? { fontSize: 'clamp(2rem,8.5vw,2.6rem)' } : undefined}
+              >
                 <span className="block">Everything you need to</span>
                 <span className="block">make your next move.</span>
               </div>
-              <p className="mx-auto mt-5 max-w-[640px] text-[clamp(1rem,1.15vw,1.18rem)] leading-8 text-[#8a90b5]">
+              <p
+                className="mx-auto mt-5 max-w-[640px] text-[clamp(1rem,1.15vw,1.18rem)] leading-8 text-[#8a90b5]"
+                style={canAnimate && !isDesktop ? { marginTop: '0.5rem', fontSize: '0.92rem', lineHeight: '1.4rem' } : undefined}
+              >
                 Discover what fits, understand where you stand, and turn your goals into a clear path forward.
               </p>
             </div>
 
-            <div className="relative mt-12 flex flex-col gap-8 lg:block lg:h-[560px] lg:overflow-hidden">
+            <div
+              className={
+                canAnimate
+                  ? 'relative mt-12 block overflow-hidden'
+                  : 'relative mt-12 flex flex-col gap-8'
+              }
+              style={
+                canAnimate
+                  ? { height: `${stageHeightPx}px`, ...(!isDesktop ? { marginTop: '1.25rem' } : {}) }
+                  : undefined
+              }
+            >
               {howItWorksCards.map((card, index) => {
                 const localProgress = progress - index
                 let translateY = 112
@@ -336,7 +441,7 @@ function HowItWorksSection() {
                   opacity = 1
                 }
 
-                const desktopStyle = {
+                const animatedStyle = {
                   '--card-z': `${50 + index}`,
                   transform: `translate3d(0, ${translateY}%, 0) scale(${scale})`,
                   opacity,
@@ -346,10 +451,35 @@ function HowItWorksSection() {
                 return (
                   <article
                     key={card.title}
-                    className="lg:absolute lg:inset-0 lg:z-[var(--card-z)]"
-                    style={isDesktop ? desktopStyle : undefined}
+                    ref={(node) => {
+                      cardRefs.current[index] = node
+                    }}
+                    // Full `inset-0` (not just `top`): an animated
+                    // card has to stretch to fill the whole stage so it
+                    // fully covers whatever's stacked beneath it -- a
+                    // shorter card left free to size to its own content
+                    // would leave the taller one underneath peeking out
+                    // past its edges. This only runs once `canAnimate` is
+                    // true; the measurement effect above reads each card's
+                    // natural height earlier, while `canAnimate` is still
+                    // false and cards are plain, unpositioned elements
+                    // (className is `undefined` in that branch below).
+                    className={canAnimate ? 'absolute inset-0 z-[var(--card-z)]' : undefined}
+                    style={canAnimate ? animatedStyle : undefined}
                   >
-                    <div className="how-neon-card rounded-[40px] bg-white px-6 py-7 shadow-[0_14px_42px_rgba(82,95,180,0.06)] transition-[transform,opacity,filter] duration-500 ease-out will-change-transform sm:px-12 sm:py-10">
+                    <div
+                      className="how-neon-card rounded-[40px] bg-white px-6 py-7 shadow-[0_14px_42px_rgba(82,95,180,0.06)] transition-[transform,opacity,filter] duration-500 ease-out will-change-transform sm:px-12 sm:py-10"
+                      style={
+                        canAnimate && !isDesktop
+                          ? {
+                              maxHeight: `${stageHeightPx}px`,
+                              overflowY: 'auto',
+                              WebkitOverflowScrolling: 'touch',
+                              overscrollBehavior: 'contain',
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="grid items-center gap-8 lg:grid-cols-[minmax(320px,0.9fr)_minmax(360px,0.76fr)] lg:gap-10">
                         <div className="flex flex-col justify-start gap-6 lg:min-h-[320px]">
                           <h3 className="max-w-[440px] text-[clamp(2.2rem,4vw,4rem)] font-medium leading-[0.94] tracking-[-0.06em] text-[#202b6d]">

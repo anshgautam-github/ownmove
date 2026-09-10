@@ -161,7 +161,7 @@ const orbitLogos = [
   { id: 'nvidia', name: 'NVIDIA', src: 'https://cdn.simpleicons.org/nvidia', ring: 'outer', angle: 315 },
 ];
 
-const LOGO_BADGE = 68;
+const LOGO_BADGE = 'clamp(38px, 12.14cqw, 68px)';
 
 // Counts up from 0 to `target` on mount (eased, not linear) instead of
 // just appearing — this runs once when OrbitVisual first mounts, which is
@@ -198,7 +198,7 @@ function OrbitVisual() {
   const programsCount = useCountUp(1000);
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[560px]">
+    <div className="relative mx-auto aspect-square w-full max-w-[560px] @container">
       <div className="absolute left-1/2 top-1/2 h-[43%] w-[43%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#171321]/12" />
       <div className="absolute left-1/2 top-1/2 h-[63%] w-[63%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#171321]/12" />
       <div className="absolute left-1/2 top-1/2 h-[83%] w-[83%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#171321]/10" />
@@ -217,8 +217,8 @@ function OrbitVisual() {
           crowding both badges. 24% diameter keeps the radius at ~67px,
           leaving a real ~19px gap on every side instead. */}
       <div className="hero-stat-orbit absolute left-1/2 top-1/2 flex h-[24%] w-[24%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-white/60 bg-white/55 shadow-[0_20px_44px_rgba(23,19,33,0.14)] backdrop-blur-xl">
-        <span className="relative z-10 text-[2.75rem] font-semibold leading-none tracking-tight text-[#171321] tabular-nums">{formatCompactCount(programsCount)}</span>
-        <span className="relative z-10 mt-2 text-sm text-[#171321]/55">Programs</span>
+        <span className="relative z-10 text-[clamp(1.5rem,7.86cqw,2.75rem)] font-semibold leading-none tracking-tight text-[#171321] tabular-nums">{formatCompactCount(programsCount)}</span>
+        <span className="relative z-10 mt-2 text-[clamp(0.75rem,2.5cqw,0.875rem)] text-[#171321]/55">Programs</span>
       </div>
 
       {orbitLogos.map((logo) => {
@@ -227,7 +227,7 @@ function OrbitVisual() {
           <div
             key={logo.id}
             title={logo.name}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-white/60 bg-white/45 p-3.5 shadow-[0_10px_24px_rgba(23,19,33,0.1)] backdrop-blur-xl"
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-white/60 bg-white/45 p-[clamp(6px,2.5cqw,14px)] shadow-[0_10px_24px_rgba(23,19,33,0.1)] backdrop-blur-xl"
             style={{ top: pos.top, left: pos.left, height: LOGO_BADGE, width: LOGO_BADGE }}
           >
             {logo.Mark ? <logo.Mark /> : <img src={logo.src} alt={logo.name} className="h-full w-full object-contain" />}
@@ -433,7 +433,7 @@ function HeroSection() {
             </div>
           </div>
 
-          <div className="hidden lg:block">
+          <div className="mx-auto w-full max-w-[420px] lg:mx-0 lg:max-w-none">
             <OrbitVisual />
           </div>
         </div>

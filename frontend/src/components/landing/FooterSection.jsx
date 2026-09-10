@@ -63,8 +63,8 @@ function FooterSection() {
             column layout with a lot of dead empty space between the
             newsletter card and the wordmark row below it, which read as
             "flat" as much as any color/contrast issue did. */}
-        <div className="relative z-10 flex flex-col justify-between gap-10 lg:min-h-[520px]">
-          <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
+        <div className="relative z-10 flex flex-col justify-between gap-6 lg:min-h-[520px] lg:gap-10">
+          <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr] lg:items-start lg:gap-8">
             {/* This was just an empty spacer div reserving room for the
                 newsletter card's height — leaving the entire left half of
                 the footer as bare gradient with nothing in it. Filling it
@@ -92,14 +92,14 @@ function FooterSection() {
               </div>
             </div>
 
-            <div className="footer-newsletter-card ml-auto w-full max-w-[640px] overflow-hidden rounded-[28px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,246,255,0.97))] px-6 py-6 text-[#19181f] shadow-[0_20px_60px_rgba(15,10,32,0.26)] sm:px-7 sm:py-7">
+            <div className="footer-newsletter-card ml-auto w-full max-w-[640px] overflow-hidden rounded-[28px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,246,255,0.97))] px-5 py-5 text-[#19181f] shadow-[0_20px_60px_rgba(15,10,32,0.26)] sm:px-7 sm:py-7">
               {/* This card sits right next to the dark card's own layered
                   glow/beams and, by comparison, was just a flat white
                   rectangle — a quiet corner blob gives it a touch of the
                   same depth without changing its own color scheme. */}
               <div className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(154,116,255,0.22)_0%,transparent_70%)] blur-2xl" />
 
-              <div className="relative grid gap-6 sm:grid-cols-[0.9fr_1.1fr] sm:items-start">
+              <div className="relative grid gap-4 sm:grid-cols-[0.9fr_1.1fr] sm:items-start sm:gap-6">
                 <div>
                   <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#f2e9ff] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#7b62e8]">
                     <span className="[&>svg]:h-3 [&>svg]:w-3">{mailIcon}</span>
@@ -112,17 +112,17 @@ function FooterSection() {
                   </h3>
                 </div>
 
-                <p className="max-w-[360px] text-[clamp(0.98rem,1vw,1.08rem)] leading-8 text-[#6e6876]">
+                <p className="max-w-[360px] text-[clamp(0.98rem,1vw,1.08rem)] leading-7 text-[#6e6876] sm:leading-8">
                   Get new opportunities, career tips, and product updates dropped straight into your
                   inbox. No spam, just what actually helps you land the next role.
                 </p>
               </div>
 
-              <div className="relative mt-8 flex flex-col gap-3 rounded-[22px] bg-[linear-gradient(90deg,rgba(242,220,255,0.82),rgba(241,224,255,0.72))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] sm:flex-row sm:items-center">
+              <div className="relative mt-5 flex flex-col gap-3 rounded-[22px] bg-[linear-gradient(90deg,rgba(242,220,255,0.82),rgba(241,224,255,0.72))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] sm:mt-8 sm:flex-row sm:items-center">
                 <input
                   type="email"
                   placeholder="Your email"
-                  className="min-w-0 flex-1 rounded-[18px] bg-transparent px-4 py-4 text-[1.25rem] font-medium tracking-[-0.03em] text-[#3b3151] outline-none placeholder:text-[#52456c]"
+                  className="min-w-0 flex-1 rounded-[18px] bg-transparent px-4 py-3.5 text-[1.25rem] font-medium tracking-[-0.03em] text-[#3b3151] outline-none placeholder:text-[#52456c] sm:py-4"
                 />
                 {/* Flat white on a pale pink strip was the one genuinely
                     lifeless element in the stacked mobile layout — full
@@ -132,7 +132,7 @@ function FooterSection() {
                     row next to the input instead of stacked under it. */}
                 <button
                   type="button"
-                  className="footer-submit-button inline-flex w-full items-center justify-center gap-3 rounded-[18px] bg-[linear-gradient(120deg,#7b62e8_0%,#5c63ff_55%,#ff6fae_100%)] px-5 py-4 text-white shadow-[0_14px_32px_-10px_rgba(101,89,227,0.55)] transition hover:translate-y-[-1px] sm:w-auto sm:justify-between sm:gap-6 sm:bg-white sm:text-[#141019] sm:shadow-[0_10px_24px_rgba(32,19,60,0.12)]"
+                  className="footer-submit-button inline-flex w-full items-center justify-center gap-3 rounded-[18px] bg-[linear-gradient(120deg,#7b62e8_0%,#5c63ff_55%,#ff6fae_100%)] px-5 py-3.5 text-white shadow-[0_14px_32px_-10px_rgba(101,89,227,0.55)] transition hover:translate-y-[-1px] sm:w-auto sm:justify-between sm:gap-6 sm:bg-white sm:py-4 sm:text-[#141019] sm:shadow-[0_10px_24px_rgba(32,19,60,0.12)]"
                 >
                   <span className="text-[1.9rem] font-light leading-none">+</span>
                   <span className="text-[0.95rem] font-semibold uppercase tracking-[0.14em]">Submit</span>
