@@ -36,17 +36,34 @@ function FooterSection() {
   return (
     <footer className="footer-stage relative overflow-hidden px-5 pb-8 pt-12 text-white sm:px-8 lg:px-10">
       <div className="footer-bg-noise pointer-events-none absolute inset-0" />
-      <div className="footer-beam footer-beam-a pointer-events-none absolute left-[12%] top-[-10%] h-[120%] w-[24%]" />
-      <div className="footer-beam footer-beam-b pointer-events-none absolute left-[34%] top-[-16%] h-[132%] w-[20%]" />
-      <div className="footer-beam footer-beam-c pointer-events-none absolute right-[14%] top-[-14%] h-[128%] w-[24%]" />
-      <div className="footer-orb footer-orb-a pointer-events-none absolute left-[16%] bottom-[8%] h-48 w-48 rounded-full" />
-      <div className="footer-orb footer-orb-b pointer-events-none absolute right-[18%] bottom-[12%] h-56 w-56 rounded-full" />
 
       <div className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,#05060b_0%,#090a14_30%,#090912_100%)] px-6 py-7 shadow-[0_24px_80px_rgba(7,8,20,0.52)] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
         <div className="footer-inner-glow pointer-events-none absolute inset-0" />
+        {/* These five used to sit as siblings of this card, positioned
+            against <footer> itself — but this card paints its own opaque
+            background on top of them in normal stacking order, so the
+            animated beams and glowing orbs were completely hidden behind
+            it everywhere except the thin pale margin around the card. That
+            silently killed most of the intended depth/richness, which is
+            a big part of why the whole thing read as flat. Moved inside
+            the card instead (still under the `relative z-10` content
+            below), where `mix-blend-mode: screen` actually has the card's
+            own dark background to blend against and `overflow-hidden`
+            clips them to its rounded corners. */}
+        <div className="footer-beam footer-beam-a pointer-events-none absolute left-[12%] top-[-10%] h-[120%] w-[24%]" />
+        <div className="footer-beam footer-beam-b pointer-events-none absolute left-[34%] top-[-16%] h-[132%] w-[20%]" />
+        <div className="footer-beam footer-beam-c pointer-events-none absolute right-[14%] top-[-14%] h-[128%] w-[24%]" />
+        <div className="footer-orb footer-orb-a pointer-events-none absolute left-[16%] bottom-[8%] h-48 w-48 rounded-full" />
+        <div className="footer-orb footer-orb-b pointer-events-none absolute right-[18%] bottom-[12%] h-56 w-56 rounded-full" />
         <div className="footer-vignette pointer-events-none absolute inset-0" />
 
-        <div className="relative z-10 flex min-h-[520px] flex-col justify-between gap-10">
+        {/* `min-h-[520px]` only from `lg` up now — below that this used to
+            force the same fixed minimum height regardless of how little
+            content there was to fill it, stretching the mobile, single-
+            column layout with a lot of dead empty space between the
+            newsletter card and the wordmark row below it, which read as
+            "flat" as much as any color/contrast issue did. */}
+        <div className="relative z-10 flex flex-col justify-between gap-10 lg:min-h-[520px]">
           <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
             {/* This was just an empty spacer div reserving room for the
                 newsletter card's height — leaving the entire left half of
@@ -56,7 +73,14 @@ function FooterSection() {
                 turns it into a closing recap of the page's actual pitch,
                 fading line to line the way the hero's Discover→Understand→
                 Decide flow already does. */}
-            <div className="flex min-h-[280px] flex-col justify-center gap-1.5 pr-4">
+            {/* `min-h-[280px]` only from `lg` up — that height exists so
+                this text block vertically centers against the taller
+                newsletter card when they sit side by side there. Forcing
+                the same height below `lg`, where the two stack instead,
+                just left a tall empty gap under three lines of text before
+                the card even started — another contributor to the mobile
+                layout reading as sparse/flat rather than deliberate. */}
+            <div className="flex flex-col justify-center gap-1.5 pr-4 lg:min-h-[280px]">
               <div className="text-[clamp(1.7rem,2.7vw,2.75rem)] font-semibold leading-[1.1] tracking-[-0.04em] text-white/95">
                 Discover what fits you.
               </div>
@@ -68,9 +92,19 @@ function FooterSection() {
               </div>
             </div>
 
-            <div className="footer-newsletter-card ml-auto w-full max-w-[640px] rounded-[28px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,246,255,0.97))] px-6 py-6 text-[#19181f] shadow-[0_20px_60px_rgba(15,10,32,0.26)] sm:px-7 sm:py-7">
-              <div className="grid gap-6 sm:grid-cols-[0.9fr_1.1fr] sm:items-start">
+            <div className="footer-newsletter-card ml-auto w-full max-w-[640px] overflow-hidden rounded-[28px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,246,255,0.97))] px-6 py-6 text-[#19181f] shadow-[0_20px_60px_rgba(15,10,32,0.26)] sm:px-7 sm:py-7">
+              {/* This card sits right next to the dark card's own layered
+                  glow/beams and, by comparison, was just a flat white
+                  rectangle — a quiet corner blob gives it a touch of the
+                  same depth without changing its own color scheme. */}
+              <div className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(154,116,255,0.22)_0%,transparent_70%)] blur-2xl" />
+
+              <div className="relative grid gap-6 sm:grid-cols-[0.9fr_1.1fr] sm:items-start">
                 <div>
+                  <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#f2e9ff] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#7b62e8]">
+                    <span className="[&>svg]:h-3 [&>svg]:w-3">{mailIcon}</span>
+                    Newsletter
+                  </span>
                   <h3 className="text-[clamp(2rem,3.1vw,3.2rem)] font-semibold leading-[0.92] tracking-[-0.06em]">
                     Keeping up
                     <br />
@@ -84,15 +118,21 @@ function FooterSection() {
                 </p>
               </div>
 
-              <div className="mt-8 flex flex-col gap-3 rounded-[22px] bg-[linear-gradient(90deg,rgba(242,220,255,0.82),rgba(241,224,255,0.72))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] sm:flex-row sm:items-center">
+              <div className="relative mt-8 flex flex-col gap-3 rounded-[22px] bg-[linear-gradient(90deg,rgba(242,220,255,0.82),rgba(241,224,255,0.72))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] sm:flex-row sm:items-center">
                 <input
                   type="email"
                   placeholder="Your email"
                   className="min-w-0 flex-1 rounded-[18px] bg-transparent px-4 py-4 text-[1.25rem] font-medium tracking-[-0.03em] text-[#3b3151] outline-none placeholder:text-[#52456c]"
                 />
+                {/* Flat white on a pale pink strip was the one genuinely
+                    lifeless element in the stacked mobile layout — full
+                    width and a colored gradient here gives the actual call
+                    to action some presence. sm+ keeps the original flat-
+                    white treatment, which already reads fine sitting in a
+                    row next to the input instead of stacked under it. */}
                 <button
                   type="button"
-                  className="footer-submit-button inline-flex items-center justify-between gap-6 rounded-[18px] bg-white px-5 py-4 text-[#141019] shadow-[0_10px_24px_rgba(32,19,60,0.12)] transition hover:translate-y-[-1px]"
+                  className="footer-submit-button inline-flex w-full items-center justify-center gap-3 rounded-[18px] bg-[linear-gradient(120deg,#7b62e8_0%,#5c63ff_55%,#ff6fae_100%)] px-5 py-4 text-white shadow-[0_14px_32px_-10px_rgba(101,89,227,0.55)] transition hover:translate-y-[-1px] sm:w-auto sm:justify-between sm:gap-6 sm:bg-white sm:text-[#141019] sm:shadow-[0_10px_24px_rgba(32,19,60,0.12)]"
                 >
                   <span className="text-[1.9rem] font-light leading-none">+</span>
                   <span className="text-[0.95rem] font-semibold uppercase tracking-[0.14em]">Submit</span>

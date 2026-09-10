@@ -1380,7 +1380,6 @@ body {
    instead of running on a loop) plus a gentle lift/glow, together reading
    as a "liquid glass" reaction rather than a flat number sitting still. */
 .hero-stat-orbit {
-  position: relative;
   overflow: hidden;
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s ease;
 }
@@ -1396,6 +1395,15 @@ body {
 }
 
 .hero-stat-orbit:hover {
+  /* Scale only. Centering comes from the `-translate-x-1/2
+     -translate-y-1/2` utility classes on this element in
+     OrbitVisual (HeroSection.jsx) -- on Tailwind v4 those compile to the
+     independent `translate: -50% -50%` CSS property, not to `transform`.
+     `translate` and `transform` are separate layers that compose (translate
+     applies, THEN transform is layered on top), so `transform` here never
+     touches the centering offset and doesn't need to repeat it -- doing so
+     (a previous version of this rule did) double-applies the -50%/-50%
+     shift and makes the badge jump instead of growing in place. */
   transform: scale(1.035);
   box-shadow: 0 26px 54px rgba(23, 19, 33, 0.18);
 }

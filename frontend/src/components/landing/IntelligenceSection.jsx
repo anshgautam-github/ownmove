@@ -414,7 +414,43 @@ function IntelligenceSection() {
                 </div>
 
                 <div className="relative px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-7">
-                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+                {/* Mobile: a compact dropdown instead of 5 stacked cards --
+                    below the `sm` breakpoint the grid below falls back to a
+                    single column, and five full-width cards eat the whole
+                    screen before the demo conversation ever appears. A
+                    select keeps every category reachable in one row instead. */}
+                <div className="sm:hidden">
+                  <label htmlFor="intelligence-category-select" className="sr-only">
+                    Choose a situation to preview
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="intelligence-category-select"
+                      value={activeCategory}
+                      onChange={(event) => setActiveCategory(event.target.value)}
+                      className="w-full appearance-none rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] px-4 py-3.5 pr-10 text-[0.95rem] font-medium tracking-[-0.03em] text-white shadow-[0_18px_34px_rgba(12,12,30,0.22)] focus:outline-none focus:ring-2 focus:ring-[#7b82ff]/50"
+                    >
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id} className="bg-[#141a33] text-white">
+                          {category.title} — {category.subtitle}
+                        </option>
+                      ))}
+                    </select>
+                    <svg
+                      className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="hidden gap-2.5 sm:grid sm:grid-cols-2 lg:grid-cols-5">
                   {categories.map((category) => (
                     <button
                       key={category.id}
