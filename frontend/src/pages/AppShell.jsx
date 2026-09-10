@@ -668,13 +668,25 @@ function OpportunityCard({ item, matched, saved, onToggleSaved, applied, onToggl
                 (`inset-0` resolves against the pill container above, the
                 nearest *positioned* ancestor; this row itself is left
                 unpositioned in flow so it doesn't become that container).
-                stopPropagation on the whole thing keeps a tap anywhere in
-                the open pop-out (scrolling the text, hitting close) from
-                also bubbling up to the card's own onClick and opening the
-                listing underneath it. */}
+                The open/closed state is one exclusive branch below rather
+                than a base "pointer-events-none/opacity-0/…" plus a
+                same-specificity "pointer-events-auto/opacity-100/…"
+                tacked on top — two plain (non-variant) utility classes for
+                the same property have no reliable winner by source order
+                alone, which is exactly why the tap-to-open version of this
+                wasn't actually becoming interactive on phones (pointer
+                events kept resolving to "none", so nothing inside —
+                scrolling, the close button — ever received a touch). The
+                `group-hover/desc:` variants are safe left as-is: the
+                `:hover` pseudo-class gives them higher specificity, so
+                they still correctly win on hover-capable devices. */}
             <div
               onClick={(e) => e.stopPropagation()}
-              className={`pointer-events-none absolute inset-0 z-20 flex origin-center scale-95 -translate-y-1 flex-col gap-1.5 overflow-hidden rounded-[16px] border border-white/80 bg-[linear-gradient(165deg,rgba(255,255,255,0.98)_0%,rgba(250,248,255,0.96)_100%)] p-3.5 opacity-0 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_20px_40px_-16px_rgba(101,89,227,0.35)] ring-1 ring-[#7b62e8]/[0.14] transition-all duration-300 ease-out group-hover/desc:pointer-events-auto group-hover/desc:translate-y-0 group-hover/desc:scale-100 group-hover/desc:opacity-100 ${showDescription ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : ''}`}
+              className={`absolute inset-0 z-20 flex origin-center flex-col gap-1.5 overflow-hidden rounded-[16px] border border-white/80 bg-[linear-gradient(165deg,rgba(255,255,255,0.98)_0%,rgba(250,248,255,0.96)_100%)] p-3.5 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_20px_40px_-16px_rgba(101,89,227,0.35)] ring-1 ring-[#7b62e8]/[0.14] transition-all duration-300 ease-out group-hover/desc:pointer-events-auto group-hover/desc:translate-y-0 group-hover/desc:scale-100 group-hover/desc:opacity-100 ${
+                showDescription
+                  ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
+                  : 'pointer-events-none scale-95 -translate-y-1 opacity-0'
+              }`}
             >
               <p className="flex shrink-0 items-center justify-between gap-1.5 text-[9.5px] font-black uppercase tracking-wide text-[#7b62e8]">
                 <span className="flex items-center gap-1.5">
