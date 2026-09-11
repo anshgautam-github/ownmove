@@ -187,11 +187,11 @@ function useCountUp(target, duration = 1600) {
   return value;
 }
 
-// Mirrors how the final "1k+" reads while it's still counting up — plain
-// numbers below 1000 (so the climb feels like counting), then "k+" once it
+// Mirrors how the final "1K+" reads while it's still counting up — plain
+// numbers below 1000 (so the climb feels like counting), then "K+" once it
 // crosses the thousand mark.
 function formatCompactCount(value) {
-  return value >= 1000 ? `${Math.floor(value / 1000)}k+` : `${value}`;
+  return value >= 1000 ? `${Math.floor(value / 1000)}K+` : `${value}`;
 }
 
 function OrbitVisual() {
