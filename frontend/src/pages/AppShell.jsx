@@ -856,6 +856,12 @@ function SidebarContentBody({ items, sectionLabel, initialKey, mode, profile, sa
   const [hackathonLocationType, setHackathonLocationType] = useState('all'); // all | remote | onsite
   const [hackathonDateFilter, setHackathonDateFilter] = useState('all'); // all | 7 | 30 | 90 (days until deadline)
   const [hackathonLocation, setHackathonLocation] = useState('all');
+  // Below `sm` the full row (segmented control + 2 selects + clear button)
+  // ran onto its own wrapped lines and pushed the first card down — on a
+  // phone that's actual scroll cost, not just visual noise. Mobile now
+  // shows a single "Filters" button that opens this same set of controls
+  // in a popover instead.
+  const [hackathonFiltersOpen, setHackathonFiltersOpen] = useState(false);
   const searchInputRef = useRef(null);
   const contentScrollRef = useRef(null);
   const activeItem = items.find((c) => c.key === active) || items[0];
@@ -1238,65 +1244,163 @@ function SidebarContentBody({ items, sectionLabel, initialKey, mode, profile, sa
         </div>
 
         {mode === 'opportunities' && active === 'hackathons' && (
-          <div className="relative mt-3 flex shrink-0 flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 rounded-full border border-white/70 bg-white/70 p-1 backdrop-blur-md">
-              {[
-                { key: 'all', label: 'All' },
-                { key: 'remote', label: 'Remote' },
-                { key: 'onsite', label: 'On-site' },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setHackathonLocationType(opt.key)}
-                  className={`rounded-full px-3 py-1.5 text-[11.5px] font-bold transition ${
-                    hackathonLocationType === opt.key ? 'bg-[#161616] text-white' : 'text-[#4a4a48] hover:bg-white'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+          <div className="relative mt-3 shrink-0">
+            {/* sm and up: unchanged full row, unlimited room for it. */}
+            <div className="hidden flex-wrap items-center gap-2 sm:flex">
+              <div className="flex items-center gap-1 rounded-full border border-white/70 bg-white/70 p-1 backdrop-blur-md">
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'remote', label: 'Remote' },
+                  { key: 'onsite', label: 'On-site' },
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setHackathonLocationType(opt.key)}
+                    className={`rounded-full px-3 py-1.5 text-[11.5px] font-bold transition ${
+                      hackathonLocationType === opt.key ? 'bg-[#161616] text-white' : 'text-[#4a4a48] hover:bg-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
 
-            <div className="relative">
-              <select
-                value={hackathonDateFilter}
-                onChange={(e) => setHackathonDateFilter(e.target.value)}
-                className="h-9 appearance-none rounded-full border border-white/70 bg-white/75 pl-3.5 pr-8 text-[11.5px] font-bold text-[#4a4a48] backdrop-blur-md transition hover:bg-white focus:outline-none"
-              >
-                <option value="all">Any date</option>
-                <option value="7">Apply within 7 days</option>
-                <option value="30">Apply within 30 days</option>
-                <option value="90">Apply within 90 days</option>
-              </select>
-              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9a9a97]">{icons.chevronDown}</span>
-            </div>
-
-            {hackathonLocationOptions.length > 0 && (
               <div className="relative">
                 <select
-                  value={hackathonLocation}
-                  onChange={(e) => setHackathonLocation(e.target.value)}
-                  className="h-9 max-w-[180px] appearance-none rounded-full border border-white/70 bg-white/75 pl-3.5 pr-8 text-[11.5px] font-bold text-[#4a4a48] backdrop-blur-md transition hover:bg-white focus:outline-none"
+                  value={hackathonDateFilter}
+                  onChange={(e) => setHackathonDateFilter(e.target.value)}
+                  className="h-9 appearance-none rounded-full border border-white/70 bg-white/75 pl-3.5 pr-8 text-[11.5px] font-bold text-[#4a4a48] backdrop-blur-md transition hover:bg-white focus:outline-none"
                 >
-                  <option value="all">All locations</option>
-                  {hackathonLocationOptions.map((loc) => (
-                    <option key={loc} value={loc}>{loc}</option>
-                  ))}
+                  <option value="all">Any date</option>
+                  <option value="7">Apply within 7 days</option>
+                  <option value="30">Apply within 30 days</option>
+                  <option value="90">Apply within 90 days</option>
                 </select>
                 <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9a9a97]">{icons.chevronDown}</span>
               </div>
-            )}
 
-            {hackathonFiltersActive && (
+              {hackathonLocationOptions.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={hackathonLocation}
+                    onChange={(e) => setHackathonLocation(e.target.value)}
+                    className="h-9 max-w-[180px] appearance-none rounded-full border border-white/70 bg-white/75 pl-3.5 pr-8 text-[11.5px] font-bold text-[#4a4a48] backdrop-blur-md transition hover:bg-white focus:outline-none"
+                  >
+                    <option value="all">All locations</option>
+                    {hackathonLocationOptions.map((loc) => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9a9a97]">{icons.chevronDown}</span>
+                </div>
+              )}
+
+              {hackathonFiltersActive && (
+                <button
+                  type="button"
+                  onClick={resetHackathonFilters}
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-bold text-[#7b62e8] transition hover:text-[#5c4fd8]"
+                >
+                  {icons.close}
+                  Clear filters
+                </button>
+              )}
+            </div>
+
+            {/* Below sm: just a "Filters" trigger — the dot marks an active
+                filter without needing the row itself to say which one. */}
+            <div className="flex items-center gap-3 sm:hidden">
               <button
                 type="button"
-                onClick={resetHackathonFilters}
-                className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-bold text-[#7b62e8] transition hover:text-[#5c4fd8]"
+                onClick={() => setHackathonFiltersOpen((open) => !open)}
+                aria-expanded={hackathonFiltersOpen}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-full border border-white/70 bg-white/75 px-3.5 text-[11.5px] font-bold backdrop-blur-md transition hover:bg-white ${
+                  hackathonFiltersActive ? 'text-[#7b62e8]' : 'text-[#4a4a48]'
+                }`}
               >
-                {icons.close}
-                Clear filters
+                {icons.sliders}
+                Filters
+                {hackathonFiltersActive && <span className="ml-0.5 h-[7px] w-[7px] rounded-full bg-[#7b62e8]" />}
               </button>
+              {hackathonFiltersActive && (
+                <button
+                  type="button"
+                  onClick={resetHackathonFilters}
+                  className="text-[11.5px] font-bold text-[#7b62e8] transition hover:text-[#5c4fd8]"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+
+            {hackathonFiltersOpen && (
+              <div className="sm:hidden">
+                {/* Tap-outside-to-close backdrop — transparent, just there
+                    to catch the tap; the popover itself sits above it. */}
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setHackathonFiltersOpen(false)}
+                />
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-40 flex flex-col gap-3 rounded-[20px] border border-white/70 bg-white/95 p-4 shadow-[0_20px_44px_rgba(20,18,40,0.16)] backdrop-blur-xl">
+                  <div className="flex items-center gap-1 self-start rounded-full border border-white/70 bg-white/70 p-1">
+                    {[
+                      { key: 'all', label: 'All' },
+                      { key: 'remote', label: 'Remote' },
+                      { key: 'onsite', label: 'On-site' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setHackathonLocationType(opt.key)}
+                        className={`rounded-full px-3 py-1.5 text-[11.5px] font-bold transition ${
+                          hackathonLocationType === opt.key ? 'bg-[#161616] text-white' : 'text-[#4a4a48]'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      value={hackathonDateFilter}
+                      onChange={(e) => setHackathonDateFilter(e.target.value)}
+                      className="h-10 w-full appearance-none rounded-[14px] border border-[#eceae4] bg-white pl-3.5 pr-8 text-[12.5px] font-bold text-[#4a4a48] focus:outline-none"
+                    >
+                      <option value="all">Any date</option>
+                      <option value="7">Apply within 7 days</option>
+                      <option value="30">Apply within 30 days</option>
+                      <option value="90">Apply within 90 days</option>
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#9a9a97]">{icons.chevronDown}</span>
+                  </div>
+
+                  {hackathonLocationOptions.length > 0 && (
+                    <div className="relative">
+                      <select
+                        value={hackathonLocation}
+                        onChange={(e) => setHackathonLocation(e.target.value)}
+                        className="h-10 w-full appearance-none rounded-[14px] border border-[#eceae4] bg-white pl-3.5 pr-8 text-[12.5px] font-bold text-[#4a4a48] focus:outline-none"
+                      >
+                        <option value="all">All locations</option>
+                        {hackathonLocationOptions.map((loc) => (
+                          <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#9a9a97]">{icons.chevronDown}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setHackathonFiltersOpen(false)}
+                    className="mt-1 rounded-[14px] bg-[#161616] py-2.5 text-[12.5px] font-bold text-white transition hover:bg-[#2a2a2a]"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}
