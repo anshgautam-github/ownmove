@@ -80,7 +80,9 @@ function WorkAiSection() {
               <img
                 src={founderPhoto}
                 alt=""
-                className="mr-2.5 h-6 w-6 shrink-0 rounded-full object-cover ring-2 ring-white/80"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+                className="mr-2.5 h-6 w-6 shrink-0 select-none rounded-full object-cover ring-2 ring-white/80"
               />
               Your Profile
             </div>
@@ -136,7 +138,9 @@ function WorkAiSection() {
                   <img
                     src={founderPhoto}
                     alt=""
-                    className="h-7 w-7 shrink-0 rounded-full object-cover ring-2 ring-white"
+                    draggable={false}
+                    onContextMenu={(e) => e.preventDefault()}
+                    className="h-7 w-7 shrink-0 select-none rounded-full object-cover ring-2 ring-white"
                   />
                   <div className="text-[clamp(1.15rem,1.25vw,1.35rem)] font-semibold tracking-tight text-[#171a27]">
                     Career Snapshot

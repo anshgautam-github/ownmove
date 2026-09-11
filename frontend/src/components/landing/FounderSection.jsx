@@ -40,10 +40,16 @@ function FounderSection() {
           </div>
 
           <div className="relative z-10 mt-8 flex items-center gap-3 border-t border-black/[0.06] pt-6">
+            {/* draggable/onContextMenu don't make the image uncopyable
+                (devtools always can), but they block the two casual paths
+                — right-click "Save image as" and a drag-out-to-desktop —
+                that most people would actually use. */}
             <img
               src={founderPhoto}
               alt="Ansh Gautam"
-              className="h-11 w-11 shrink-0 rounded-full object-cover"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              className="h-11 w-11 shrink-0 select-none rounded-full object-cover"
             />
             <div>
               <div className="text-[0.95rem] font-semibold tracking-tight text-[#202124]">Ansh Gautam</div>
