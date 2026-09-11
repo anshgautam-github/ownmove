@@ -1,5 +1,6 @@
 import React from 'react';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import useClientNavigation from './hooks/useClientNavigation';
 import LandingPage from './pages/LandingPage';
@@ -38,6 +39,7 @@ function App() {
     <>
       {content}
       <Analytics />
+      <SpeedInsights />
     </>
   );
 }
