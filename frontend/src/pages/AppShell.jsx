@@ -1375,11 +1375,21 @@ function SidebarContentBody({ items, sectionLabel, initialKey, mode, profile, sa
               </div>
             )}
             {!isLoading && !isError && listings.length > 0 && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {listings.map((item) => (
-                  <OpportunityCardMemo key={item.id} item={item} matched={scoreOf(item) > 0} saved={savedIds?.has(item.id)} onToggleSaved={onToggleSaved} applied={active === 'applied'} onToggleApplied={onToggleApplied} exiting={pendingAppliedIds?.has(item.id)} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {listings.map((item) => (
+                    <OpportunityCardMemo key={item.id} item={item} matched={scoreOf(item) > 0} saved={savedIds?.has(item.id)} onToggleSaved={onToggleSaved} applied={active === 'applied'} onToggleApplied={onToggleApplied} exiting={pendingAppliedIds?.has(item.id)} />
+                  ))}
+                </div>
+                {active !== 'applied' && (
+                  <div className="mt-4 flex flex-col items-center gap-1 rounded-[18px] border border-dashed border-black/[0.08] bg-white/40 px-6 py-6 text-center">
+                    <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${accentBadgeCls}`}>More on the way</span>
+                    <p className="max-w-sm text-[12.5px] font-semibold text-[#7a7a76]">
+                      More {activeItem.label.toLowerCase()} are in the process of being added — check back soon for new ones.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : (

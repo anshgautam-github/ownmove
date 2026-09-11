@@ -2224,6 +2224,22 @@ body {
    `(hover: none) and (pointer: coarse)` is the standard touch-device
    signature — it won't affect a mouse/trackpad, including one on a
    touchscreen laptop. */
+/* Applies to every <img> on the site, not just the ones we've hand-edited
+   with draggable/onContextMenu props — this is the CSS half of "disable
+   image download": it kills the browser/OS-level affordances that exist
+   outside any click handler. `-webkit-touch-callout: none` is the one
+   that matters most on phones — without it, a long-press on any image
+   pops the native "Save Image" / "Copy" sheet regardless of what
+   JavaScript does. `-webkit-user-drag: none` stops the desktop
+   drag-image-to-desktop gesture. Neither of these (nor the JS
+   contextmenu/dragstart guard in App.jsx) can stop devtools, "View Page
+   Source", or a screenshot — nothing running in the browser can. */
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 @media (hover: none) and (pointer: coarse) {
   .custom-scroll,
   .custom-scroll-mono {
