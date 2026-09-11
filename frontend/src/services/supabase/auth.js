@@ -1,5 +1,4 @@
 import { supabase } from './client';
-import { loadOnboardingProfile } from './profiles';
 import { safeGetItem, safeRemoveItem } from '../../utils/safeStorage';
 
 // Thin wrapper so callers can distinguish "Supabase rejected this" from any
@@ -92,8 +91,13 @@ export async function signInWithEmail({ email, password }) {
 }
 
 // Same destination logic Google OAuth already uses via AuthCallbackScreen:
-// an explicit pre-login destination wins, otherwise returning users go
-// straight to Discover and first-timers go to onboarding. Shared here so
+// an explicit pre-login destination still wins (e.g. "Build my profile" on
+// the landing page stashes '/profile' before opening the dialog). Otherwise
+// everyone — new or returning — lands on Discover now; onboarding is no
+// longer a forced detour on the way in. A profile that hasn't been filled
+// in yet is instead handled inline by the Profile tab itself (see
+// AppShell.jsx's `hasProfile` check), which shows the onboarding steps
+// there rather than gating the whole app on them first. Shared here so
 // email/password sign-in lands users in exactly the same place OAuth would.
 export async function resolvePostAuthRedirect() {
   const redirect = safeGetItem('postLoginRedirect');
@@ -102,6 +106,5 @@ export async function resolvePostAuthRedirect() {
     return redirect;
   }
 
-  const profile = await loadOnboardingProfile();
-  return profile ? '/discover' : '/onboarding';
+  return '/discover';
 }

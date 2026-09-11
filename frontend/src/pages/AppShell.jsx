@@ -19,6 +19,9 @@ const CareerRoadmapDashboard = lazy(() => import('../components/career-ai/Career
 const CareerSimulationDashboard = lazy(() => import('../components/career-ai/CareerSimulationDashboard'));
 const CareerCoachDashboard = lazy(() => import('../components/career-ai/CareerCoachDashboard'));
 const LearningJourney = lazy(() => import('../components/certifications/LearningJourney'));
+// Only needed for a signed-in user who has never saved a profile row yet
+// (see `hasProfile` below) — everyone else never mounts this chunk.
+const OnboardingScreen = lazy(() => import('./OnboardingScreen'));
 
 // Same spinner used for the top-level "Loading…" auth check (see
 // StatusScreen usage below) so a lazy chunk loading reads as the same kind
@@ -2463,8 +2466,17 @@ function AppShell({ view: initialView }) {
   const isCareerAi = view === 'career-ai';
   const isProfile = view === 'profile';
   const isSaved = view === 'saved';
-  const eyebrow = isDiscover ? 'Discover · Opportunities' : isCareerAi ? 'Career AI · Tools' : isSaved ? 'Saved · Bookmarks' : 'Profile · Edit';
-  const heading = isDiscover ? 'Find your next move' : isCareerAi ? 'Plan with Career AI' : isSaved ? 'Your saved opportunities' : 'Your profile';
+  // `profile` is `{}` (not null) once loading finishes with no DB row for
+  // this user — see the bootstrap effect's `setProfile(loaded || {})` and
+  // loadOnboardingProfile()'s own null-for-no-row contract. That's exactly
+  // "never saved a profile" (saveOnboardingProfile, called from either the
+  // onboarding wizard's Finish or this tab's own Save changes, is the only
+  // writer), so it doubles as "still needs onboarding" without a separate
+  // flag to keep in sync.
+  const hasProfile = Object.keys(profile || {}).length > 0;
+  const needsOnboarding = isProfile && !hasProfile;
+  const eyebrow = isDiscover ? 'Discover · Opportunities' : isCareerAi ? 'Career AI · Tools' : isSaved ? 'Saved · Bookmarks' : needsOnboarding ? 'Profile · Get started' : 'Profile · Edit';
+  const heading = isDiscover ? 'Find your next move' : isCareerAi ? 'Plan with Career AI' : isSaved ? 'Your saved opportunities' : needsOnboarding ? 'Set up your profile' : 'Your profile';
   // Discover, Career AI, and Profile pick up the landing page's theme —
   // but the Hero's more saturated diagonal gradient read as too pink once
   // rendered full-screen, so this uses the FAQ section's much lighter,
@@ -2632,7 +2644,11 @@ function AppShell({ view: initialView }) {
               <h1 className="text-[22px] font-black leading-none tracking-tight sm:text-[25px]">{heading}</h1>
             </div>
           </div>
-          {isProfile && (
+          {/* Save changes only means something once there's an existing
+              profile row to edit — the onboarding wizard shown below for a
+              first-time visitor has its own Finish/Skip actions and isn't
+              wired to profileDraft the same way. */}
+          {isProfile && !needsOnboarding && (
             <div className="flex flex-wrap items-center gap-2">
               {profileSaveMessage && (
                 <span className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${profileSaveState === 'error' ? 'border border-red-200 bg-red-50 text-red-600' : 'border border-white/70 bg-white/75 backdrop-blur-md text-[#4a4a48]'}`}>
@@ -2666,15 +2682,31 @@ function AppShell({ view: initialView }) {
             <SidebarContentBodyMemo items={careerAiOptions} sectionLabel="Tools" initialKey="ai-coach" profile={profile} locked />
           </div>
           <div className={`absolute inset-0 flex flex-col transform-gpu ${isProfile ? 'z-10' : 'pointer-events-none opacity-0'}`}>
-            <ProfileBodyMemo
-              draft={profileDraft}
-              onField={updateDraftField}
-              onToggleList={toggleDraftList}
-              onAddCustom={addDraftCustom}
-              onAddExperience={addDraftExperience}
-              onRemoveExperience={removeDraftExperience}
-              onExperienceField={updateDraftExperienceField}
-            />
+            {needsOnboarding ? (
+              // First-time visitor, no profile row yet: the same step
+              // wizard that used to live behind a forced /onboarding
+              // redirect after login, now shown inline here instead —
+              // scoped to this pane's own scroll region (OnboardingScreen
+              // is a standalone `min-h-screen` page normally, so without
+              // this wrapper its content would just overflow the pane
+              // rather than scroll within it). Its own Skip/Finish actions
+              // already land on /discover, unchanged.
+              <div className="custom-scroll flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden">
+                <Suspense fallback={<PaneLoadingFallback />}>
+                  <OnboardingScreen />
+                </Suspense>
+              </div>
+            ) : (
+              <ProfileBodyMemo
+                draft={profileDraft}
+                onField={updateDraftField}
+                onToggleList={toggleDraftList}
+                onAddCustom={addDraftCustom}
+                onAddExperience={addDraftExperience}
+                onRemoveExperience={removeDraftExperience}
+                onExperienceField={updateDraftExperienceField}
+              />
+            )}
           </div>
           <div className={`absolute inset-0 flex flex-col transform-gpu ${isSaved ? 'z-10' : 'pointer-events-none opacity-0'}`}>
             <SavedBodyMemo items={savedItems} status={savedStatus} onRetry={loadSaved} onToggleSaved={toggleSaved} profile={profile} appliedIds={appliedIds} onToggleApplied={toggleApplied} onBrowseDiscover={() => goToView('discover')} />
