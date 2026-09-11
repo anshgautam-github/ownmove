@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   startGoogleSupabaseAuth,
   signUpWithEmail,
@@ -141,7 +142,21 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
     }
   };
 
-  return (
+  // Rendered via a portal straight onto <body>, not in normal JSX-parent
+  // position: AuthDialog is opened from HeroSection, which on desktop lives
+  // inside HeroWorkTransition's crossfade wrapper (LandingPage.jsx) --  an
+  // ancestor with an inline `transform` (translate3d/scale) for the
+  // Hero/WorkAi pin animation. Any transformed ancestor becomes the
+  // containing block for a `position: fixed` descendant, so without the
+  // portal this dialog's "fixed inset-0" was resolving against that
+  // (often scrolled-mostly-off-screen) wrapper instead of the real
+  // viewport -- it rendered squashed into a sliver, or invisible, whenever
+  // someone opened it after scrolling past the hero (e.g. the "Build my
+  // profile" CTA further down the page). Portalling to document.body
+  // sidesteps the whole ancestor chain, so this is always positioned
+  // against the true viewport no matter where in the tree it's triggered
+  // from or how far the page has scrolled.
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)] px-4 py-4 text-[#131114] sm:px-7 sm:py-6">
       <div className="mx-auto flex min-h-full w-full max-w-[760px] flex-col">
         {/* Sticky so the close button stays reachable even after the page
@@ -323,7 +338,8 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
           </div>
         </section>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
