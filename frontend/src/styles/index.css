@@ -468,6 +468,69 @@ body {
   flex: none;
 }
 
+/* Below `lg` (the same breakpoint HowItWorksSection's own `isDesktop` state
+   switches on), the pinned card stack has a hard-capped stage height (the
+   viewport minus the heading above it) instead of the free-scrolling page
+   these device-mockup sizes were designed for. Every one of these was still
+   using its desktop min-height/padding/font-size on mobile, so a card's
+   real content (title + body + this mockup) came out taller than the stage
+   could ever show -- forcing the card into its internal scroll and, worse,
+   letting that scroll land mid-title, which is what read as "broken" (a
+   sliver of a letter poking out above the visible card instead of the
+   heading it belongs to). Shrinking the mockup chrome here is what actually
+   buys back enough height for a card to fit -- or come close to fitting --
+   without relying on that internal scroll at all. */
+@media (max-width: 1023px) {
+  .how-card-device {
+    padding: 12px;
+  }
+
+  .how-card-inner {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .how-list-title {
+    padding: 8px 6px 12px;
+    font-size: 0.92rem;
+  }
+
+  .how-list-row {
+    padding: 11px 4px;
+    font-size: 0.86rem;
+  }
+
+  .how-goal-grid {
+    gap: 8px;
+  }
+
+  .how-goal-box {
+    min-height: 0;
+    padding: 14px 12px;
+    font-size: 0.82rem;
+  }
+
+  .how-card-button {
+    margin-top: 10px;
+    padding: 11px 14px;
+  }
+
+  .how-plan-header {
+    margin-bottom: 6px;
+  }
+
+  .how-plan-item {
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 0.84rem;
+  }
+
+  .how-progress-bar {
+    margin-top: 8px;
+    height: 8px;
+  }
+}
+
 .how-feedback-bubble {
   border-radius: 18px;
   background: #f6f5fb;

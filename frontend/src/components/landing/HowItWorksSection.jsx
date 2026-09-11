@@ -493,7 +493,7 @@ function HowItWorksSection() {
                     style={canAnimate ? animatedStyle : undefined}
                   >
                     <div
-                      className="how-neon-card rounded-[40px] bg-white px-6 py-7 shadow-[0_14px_42px_rgba(82,95,180,0.06)] transition-[transform,opacity,filter] duration-500 ease-out will-change-transform sm:px-12 sm:py-10"
+                      className="how-neon-card rounded-[40px] bg-white px-5 py-5 shadow-[0_14px_42px_rgba(82,95,180,0.06)] transition-[transform,opacity,filter] duration-500 ease-out will-change-transform sm:px-12 sm:py-10"
                       style={
                         canAnimate && !isDesktop
                           ? {
@@ -542,12 +542,25 @@ function HowItWorksSection() {
                           : undefined
                       }
                     >
-                      <div className="grid items-center gap-8 lg:grid-cols-[minmax(320px,0.9fr)_minmax(360px,0.76fr)] lg:gap-10">
-                        <div className="flex flex-col justify-start gap-6 lg:min-h-[320px]">
-                          <h3 className="max-w-[440px] text-[clamp(2.2rem,4vw,4rem)] font-medium leading-[0.94] tracking-[-0.06em] text-[#202b6d]">
+                      <div className="grid items-center gap-4 lg:grid-cols-[minmax(320px,0.9fr)_minmax(360px,0.76fr)] lg:gap-10">
+                        <div className="flex flex-col justify-start gap-2 lg:gap-6 lg:min-h-[320px]">
+                          {/* This title/body pair used to be sized purely
+                              for the free-scrolling desktop layout (a huge
+                              clamp() headline + leading-8/32px body copy)
+                              with no smaller mobile step -- fine when the
+                              card could be any height, but below `lg` the
+                              card has to fit inside a fixed-height pinned
+                              stage (see stageHeightPx above), so that
+                              desktop-scaled text alone could already blow
+                              past the available room before the device
+                              mockup even started. Sized down by default and
+                              stepping back up to the original desktop
+                              clamp()/leading-8 at `lg` keeps the animation
+                              working exactly as before there. */}
+                          <h3 className="max-w-[440px] text-[1.7rem] font-medium leading-[1.05] tracking-[-0.03em] text-[#202b6d] lg:text-[clamp(2.2rem,4vw,4rem)] lg:leading-[0.94] lg:tracking-[-0.06em]">
                             {card.title}
                           </h3>
-                          <p className="max-w-[420px] text-[clamp(1rem,1.08vw,1.1rem)] leading-8 text-[#8b92b5]">
+                          <p className="max-w-[420px] text-[0.95rem] leading-[1.55] text-[#8b92b5] lg:text-[clamp(1rem,1.08vw,1.1rem)] lg:leading-8">
                             {card.body}
                           </p>
                         </div>

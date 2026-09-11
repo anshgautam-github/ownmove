@@ -142,9 +142,13 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)] px-4 py-4 text-[#131114] sm:px-7 sm:py-6">
-      <div className="mx-auto flex h-full w-full max-w-[760px] flex-col">
-        <div className="flex shrink-0 items-center justify-between">
+    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)] px-4 py-4 text-[#131114] sm:px-7 sm:py-6">
+      <div className="mx-auto flex min-h-full w-full max-w-[760px] flex-col">
+        {/* Sticky so the close button stays reachable even after the page
+            scrolls down into a tall form — without this, closing on a
+            short/keyboard-open viewport meant scrolling all the way back
+            up first. */}
+        <div className="sticky top-0 z-20 -mx-4 flex shrink-0 items-center justify-between bg-[#fffdf9]/85 px-4 py-1 backdrop-blur-md sm:-mx-7 sm:px-7">
           <div className="inline-flex items-center rounded-full border border-[#111827]/18 bg-white/55 px-6 py-3 text-lg font-medium tracking-tight text-black shadow-[0_10px_24px_rgba(17,24,39,0.04)]">
             OwnMove
           </div>
@@ -160,7 +164,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
 
         <section className="flex min-h-0 flex-1 items-center justify-center py-6">
           <div className="w-full max-w-[440px]">
-            <div className="relative overflow-hidden rounded-[28px] border border-[#111827]/10 bg-white/58 px-7 py-7 shadow-[0_24px_70px_rgba(96,86,176,0.1)] backdrop-blur-md sm:px-9">
+            <div className="relative overflow-hidden rounded-[28px] border border-[#111827]/10 bg-white/58 px-5 py-6 shadow-[0_24px_70px_rgba(96,86,176,0.1)] backdrop-blur-md sm:px-9 sm:py-7">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(255,224,187,0.28),transparent_32%),radial-gradient(circle_at_86%_8%,rgba(154,127,255,0.11),transparent_28%)]" />
               <div className="relative z-10">
               <div className="text-center">

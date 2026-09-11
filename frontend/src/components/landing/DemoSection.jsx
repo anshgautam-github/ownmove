@@ -574,7 +574,14 @@ function DemoSection() {
                 <div className="flex-1 flex items-center justify-center text-center px-4 z-10">
                   <p className={`text-xl sm:text-2xl font-light max-w-[280px] leading-relaxed transition-colors duration-700 ${draggingId ? 'text-white/80' : 'text-[#5a658a]'}`}>
                     <span className="inline-block mr-3 text-[#c6a0f6] animate-pulse">◀</span>
-                    Drag a company.
+                    {/* Same (hover: hover) media-feature split already used
+                        for the "Hover to preview" / "Tap to preview" toggle
+                        in IntelligenceSection -- a touchscreen has no plain
+                        drag, only press-and-hold-then-drag, so the copy
+                        needs to say that explicitly there instead of
+                        assuming a mouse. */}
+                    <span className="hidden [@media(hover:hover)]:inline">Drag a company.</span>
+                    <span className="inline [@media(hover:hover)]:hidden">Hold and drag a company.</span>
                     <br />
                     See what you&rsquo;ve been missing.
                   </p>
