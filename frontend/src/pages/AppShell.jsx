@@ -2071,6 +2071,16 @@ const CareerCoachDashboardMemo = React.memo(CareerCoachDashboard);
 
 const VIEW_ROUTES = { discover: '/discover', 'career-ai': '/career-ai', profile: '/profile', saved: '/saved' };
 
+// The "please use a desktop" welcome popup: phone-only (checked via
+// matchMedia against the same breakpoint the bottom tab bar itself uses,
+// `md` = 768px), and only once someone is actually signed in — never on
+// the public landing page. `SHOWN_KEY` (sessionStorage) keeps it from
+// popping up again on every internal navigation/refresh within the same
+// tab; `DISMISSED_KEY` (localStorage) is the permanent opt-out from the
+// “Don’t show this again” control, and survives across sessions/tabs.
+const MOBILE_WELCOME_DISMISSED_KEY = 'ownmove:mobile-welcome-dismissed';
+const MOBILE_WELCOME_SHOWN_KEY = 'ownmove:mobile-welcome-shown';
+
 function AppShell({ view: initialView }) {
   const [status, setStatus] = useState('loading');
   const [profile, setProfile] = useState(null);
@@ -2143,6 +2153,45 @@ function AppShell({ view: initialView }) {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [accountMenuOpen]);
+
+  // Phone-only "we recommend desktop" welcome popup. Gated on `status ===
+  // 'ready'` so it only ever fires post-login (the loading/signed-out
+  // screens return before this component's body even reaches here) and
+  // never for a visitor still on the public landing page.
+  const [showMobileWelcome, setShowMobileWelcome] = useState(false);
+
+  useEffect(() => {
+    if (status !== 'ready') return;
+    // Wrapped in an async IIFE (matching the bootstrap effect above) so the
+    // eventual setState isn't called synchronously at the top of the effect
+    // body, which can cascade an extra render.
+    (async () => {
+      try {
+        if (window.localStorage.getItem(MOBILE_WELCOME_DISMISSED_KEY) === '1') return;
+        if (window.sessionStorage.getItem(MOBILE_WELCOME_SHOWN_KEY) === '1') return;
+        if (!window.matchMedia('(max-width: 767px)').matches) return;
+        window.sessionStorage.setItem(MOBILE_WELCOME_SHOWN_KEY, '1');
+      } catch {
+        // Storage can throw in some private-browsing modes — fail quiet
+        // rather than break the whole shell over a welcome popup.
+        return;
+      }
+      setShowMobileWelcome(true);
+    })();
+  }, [status]);
+
+  const dismissMobileWelcome = useCallback(() => {
+    setShowMobileWelcome(false);
+  }, []);
+
+  const dismissMobileWelcomeForever = useCallback(() => {
+    setShowMobileWelcome(false);
+    try {
+      window.localStorage.setItem(MOBILE_WELCOME_DISMISSED_KEY, '1');
+    } catch {
+      // Worst case it just shows again next session — not worth surfacing.
+    }
+  }, []);
 
   const loadSaved = useCallback(async () => {
     setSavedStatus('loading');
@@ -2651,6 +2700,58 @@ function AppShell({ view: initialView }) {
           {toast.message}
         </div>
       </div>
+
+      {/* Phone-only welcome popup — see MOBILE_WELCOME_* keys above. `md:hidden`
+          here is belt-and-suspenders on top of the matchMedia check in the
+          effect (covers a tablet-to-desktop resize after it was already
+          shown), not the primary gate. */}
+      {showMobileWelcome && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#161616]/45 px-5 backdrop-blur-sm md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mobile-welcome-heading"
+        >
+          <div className="relative w-full max-w-[336px] overflow-hidden rounded-[28px] border border-white/80 bg-[linear-gradient(165deg,rgba(255,255,255,0.98)_0%,rgba(250,248,255,0.94)_100%)] px-6 py-7 text-center shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),0_28px_60px_-20px_rgba(40,50,30,0.45)] ring-1 ring-[#7b62e8]/[0.12] ring-offset-2 ring-offset-white/40">
+            <button
+              type="button"
+              onClick={dismissMobileWelcome}
+              aria-label="Close"
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-[#9a9a97] transition hover:bg-black/5 hover:text-[#1a1a1a]"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff9ec4_0%,#7b62e8_100%)] text-2xl shadow-[0_10px_24px_-8px_rgba(101,89,227,0.6)]">
+              🩷
+            </span>
+
+            <p id="mobile-welcome-heading" className="mt-4 text-[17px] font-black tracking-tight text-[#1a1a1a]">
+              Great to see you here!
+            </p>
+            <p className="mt-2 text-[13px] font-semibold leading-relaxed text-[#5a5a58]">
+              You&#8217;re about to explore your next move. For the smoothest experience, we recommend using a desktop or laptop.
+            </p>
+
+            <button
+              type="button"
+              onClick={dismissMobileWelcome}
+              className="mt-5 w-full rounded-full bg-[#161616] px-5 py-2.5 text-[13px] font-bold text-white transition hover:bg-[#2a2a2a]"
+            >
+              Got it
+            </button>
+            <button
+              type="button"
+              onClick={dismissMobileWelcomeForever}
+              className="mt-3 text-[11.5px] font-bold text-[#9a9a97] underline decoration-dotted underline-offset-2 transition hover:text-[#5a5a58]"
+            >
+              Don&#8217;t show this again
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
