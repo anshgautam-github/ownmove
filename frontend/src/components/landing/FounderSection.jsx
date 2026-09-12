@@ -39,7 +39,12 @@ function FounderSection() {
             </p>
           </div>
 
-          <div className="relative z-10 mt-8 flex items-center gap-3 border-t border-black/[0.06] pt-6">
+          <a
+            href="https://www.linkedin.com/in/anshgautam1011/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative z-10 mt-8 flex items-center gap-3 border-t border-black/[0.06] pt-6 transition-opacity hover:opacity-80"
+          >
             {/* draggable/onContextMenu don't make the image uncopyable
                 (devtools always can), but they block the two casual paths
                 — right-click "Save image as" and a drag-out-to-desktop —
@@ -55,7 +60,7 @@ function FounderSection() {
               <div className="text-[0.95rem] font-semibold tracking-tight text-[#202124]">Ansh Gautam</div>
               <div className="text-[0.82rem] text-[#6b6f7e]">Founder, OwnMove</div>
             </div>
-          </div>
+          </a>
         </div>
     </div>
   )

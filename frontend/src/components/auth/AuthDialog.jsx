@@ -224,17 +224,17 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
         ×
       </button>
 
-      <div className="flex min-h-full flex-col items-center justify-center px-4 py-16 sm:px-6">
+      <div className="flex min-h-full flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-16">
         {/* Real brand asset (public/logo.svg), same one used in the site
             header (HeroSection.jsx) and app shell -- previously this was a
             plain "OwnMove" text label standing in for it. */}
-        <a href="/" className="mb-8 inline-flex">
-          <img src="/logo.svg" alt="OwnMove" className="h-10 w-auto sm:h-11" />
+        <a href="/" className="mb-4 inline-flex sm:mb-8">
+          <img src="/logo.svg" alt="OwnMove" className="h-8 w-auto sm:h-11" />
         </a>
 
         <div className="w-full max-w-[420px]">
           <MotionDiv
-            className="relative overflow-hidden rounded-[28px] border border-[#111827]/10 bg-white/60 px-6 py-8 shadow-[0_24px_70px_rgba(96,86,176,0.1)] backdrop-blur-md sm:px-9 sm:py-9"
+            className="relative overflow-hidden rounded-[28px] border border-[#111827]/10 bg-white/60 px-5 py-5 shadow-[0_24px_70px_rgba(96,86,176,0.1)] backdrop-blur-md sm:px-9 sm:py-9"
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
@@ -257,42 +257,42 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
               <div className="text-center">
-                <h1 className="text-[1.7rem] font-semibold leading-tight tracking-tight text-black">{heading}</h1>
-                <p className="mt-2 text-sm leading-6 text-[#4B5563]">{subtitle}</p>
+                <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-black sm:text-[1.7rem]">{heading}</h1>
+                <p className="mt-1 text-sm leading-6 text-[#4B5563] sm:mt-2">{subtitle}</p>
               </div>
 
-              <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+              <form className="mt-4 space-y-3 sm:mt-8 sm:space-y-4" onSubmit={handleSubmit}>
                 {authMode === 'signup' && (
                   <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-[#6B7280]">Full name</span>
+                    <span className="mb-1 block text-sm font-medium text-[#6B7280] sm:mb-2">Full name</span>
                     <input
                       type="text"
                       value={fullName}
                       onChange={(event) => setFullName(event.target.value)}
                       required
                       disabled={isSubmitting || needsEmailConfirmation}
-                      className="h-12 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60"
+                      className="h-11 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60 sm:h-12"
                       placeholder="Your name"
                     />
                   </label>
                 )}
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#6B7280]">Email</span>
+                  <span className="mb-1 block text-sm font-medium text-[#6B7280] sm:mb-2">Email</span>
                   <input
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     required
                     disabled={isSubmitting || needsEmailConfirmation || resetEmailSent}
-                    className="h-12 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60"
+                    className="h-11 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60 sm:h-12"
                     placeholder="you@example.com"
                   />
                 </label>
 
                 {authMode !== 'forgot' && (
                   <label className="block">
-                    <div className="mb-2 flex items-center justify-between">
+                    <div className="mb-1 flex items-center justify-between sm:mb-2">
                       <span className="text-sm font-medium text-[#6B7280]">Password</span>
                       {authMode === 'login' && (
                         <button
@@ -312,7 +312,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                         required
                         minLength={6}
                         disabled={isSubmitting || needsEmailConfirmation}
-                        className="h-12 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 pr-12 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60"
+                        className="h-11 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 pr-12 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60 sm:h-12"
                         placeholder="Enter password"
                       />
                       <button
@@ -329,7 +329,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                 )}
 
                 {authMode !== 'forgot' && (
-                  <label className="flex items-start gap-2 pt-1">
+                  <label className="flex items-start gap-2 pt-0 sm:pt-1">
                     <input
                       type="checkbox"
                       checked={acceptedTerms}
@@ -352,7 +352,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                 <button
                   type="submit"
                   disabled={isSubmitting || needsEmailConfirmation || resetEmailSent}
-                  className="h-12 w-full cursor-pointer rounded-full bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] text-sm font-semibold text-white shadow-[0_8px_20px_rgba(101,89,227,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(101,89,227,0.28)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                  className="h-11 w-full cursor-pointer rounded-full bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] text-sm font-semibold text-white shadow-[0_8px_20px_rgba(101,89,227,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(101,89,227,0.28)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:h-12"
                 >
                   {authMode === 'forgot'
                     ? (isSubmitting ? 'Sending…' : resetEmailSent ? 'Link sent' : 'Send reset link')
@@ -375,7 +375,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
 
               {!needsEmailConfirmation && authMode !== 'forgot' && (
                 <>
-                  <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                  <div className="my-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:my-6">
                     <span className="h-px bg-[#111827]/12" />
                     <span className="text-xs font-medium text-[#8b929d]">or continue with</span>
                     <span className="h-px bg-[#111827]/12" />
@@ -384,7 +384,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                   <button
                     type="button"
                     onClick={handleGoogleClick}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#111827]/18 bg-white/50 px-4 text-sm font-medium text-black transition hover:bg-white hover:shadow-[0_10px_24px_rgba(17,24,39,0.05)]"
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#111827]/18 bg-white/50 px-4 text-sm font-medium text-black transition hover:bg-white hover:shadow-[0_10px_24px_rgba(17,24,39,0.05)] sm:h-11"
                   >
                     <GoogleIcon />
                     Google
@@ -408,7 +408,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                   redundant Terms & Conditions link) lived outside the card
                   in a two-column row that read as misaligned/disconnected
                   from the form above it. */}
-              <p className="mt-7 text-center text-sm text-[#6B7280]">
+              <p className="mt-4 text-center text-sm text-[#6B7280] sm:mt-7">
                 {authMode === 'forgot'
                   ? 'Remembered your password?'
                   : authMode === 'login'
