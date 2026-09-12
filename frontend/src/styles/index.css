@@ -16,7 +16,15 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth was removed here -- Lenis (src/utils/smoothScroll.js)
+     now owns smooth scrolling app-wide. Leaving this CSS rule in place
+     alongside Lenis is a known conflict: Lenis animates scroll by calling
+     window.scrollTo() many times per second, and with this rule active the
+     browser would ALSO try to smooth-interpolate each of those calls on top
+     of Lenis's own easing, producing janky/glitchy double-smoothed motion
+     instead of the intended smooth scroll. Anchor-link jumps (useClientNavigation)
+     and the AuthDialog scroll lock now route through lenis.scrollTo()/
+     stop()/start() instead of relying on this CSS for their smoothing. */
   /* `clip`, not `hidden`: per the CSS overflow spec, setting overflow-x to
      anything other than `visible` while overflow-y stays at its default
      forces overflow-y to compute as `auto` too — turning html/body into a

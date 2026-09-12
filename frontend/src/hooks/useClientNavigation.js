@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getSmoothScroll } from '../utils/smoothScroll';
 
 /**
  * Minimal client-side router.
@@ -42,10 +43,26 @@ export function useClientNavigation() {
         // wait a tick for the new screen to mount before scrolling to the anchor
         requestAnimationFrame(() => {
           const target = document.querySelector(url.hash);
-          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (!target) return;
+          // Route through Lenis (site-wide smooth scroll) when it's up, so
+          // its own tracked scroll position stays correct instead of
+          // drifting out of sync with a scroll it didn't know happened.
+          // Falls back to the plain native smooth scroll for the brief
+          // window before Lenis has initialized.
+          const lenis = getSmoothScroll();
+          if (lenis) {
+            lenis.scrollTo(target, { offset: 0 });
+          } else {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         });
       } else if (!samePath) {
-        window.scrollTo(0, 0);
+        const lenis = getSmoothScroll();
+        if (lenis) {
+          lenis.scrollTo(0, { immediate: true });
+        } else {
+          window.scrollTo(0, 0);
+        }
       }
     };
     document.addEventListener('click', onClick);

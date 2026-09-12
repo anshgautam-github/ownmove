@@ -7,6 +7,7 @@ import { loadAppliedOpportunityIds, markOpportunityApplied, unmarkOpportunityApp
 import { supabase } from '../services/supabase/client';
 import { getCache, setCache, setCacheScope } from '../services/api/localCache';
 import CertificationsCatalog from '../components/certifications/CertificationsCatalog';
+import { useContainerSmoothScroll } from '../hooks/useContainerSmoothScroll';
 
 // Code-split: these five are the heaviest screens in the app (rich
 // dashboards, an animated SVG/Framer-Motion roadmap) and are only ever
@@ -868,6 +869,11 @@ function SidebarContentBody({ items, sectionLabel, initialKey, mode, profile, sa
   const searchInputRef = useRef(null);
   const contentScrollRef = useRef(null);
   const activeItem = items.find((c) => c.key === active) || items[0];
+  // `active` (the tab key) as depKey: this same ref gets reassigned to
+  // whichever sibling panel is currently mounted-visible (see below), so
+  // the underlying DOM node changes without the ref object itself
+  // changing -- depKey forces a fresh scoped Lenis instance each time.
+  useContainerSmoothScroll(contentScrollRef, { depKey: active });
 
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
@@ -1594,6 +1600,8 @@ function SavedBody({ items, status, onRetry, onToggleSaved, profile, appliedIds,
 
   const isLoading = status === 'loading';
   const isError = status === 'error';
+  const savedScrollRef = useRef(null);
+  useContainerSmoothScroll(savedScrollRef);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.58)_100%)] p-6 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.95),inset_0_0_0_1px_rgba(255,255,255,0.3),0_24px_48px_-24px_rgba(40,50,30,0.4)] backdrop-blur-2xl">
@@ -1609,7 +1617,7 @@ function SavedBody({ items, status, onRetry, onToggleSaved, profile, appliedIds,
         </div>
       </div>
 
-      <div className="custom-scroll mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-1 pr-2 pt-2">
+      <div ref={savedScrollRef} className="custom-scroll mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-1 pr-2 pt-2">
         {isLoading && (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,360px))] gap-4">
             {Array.from({ length: 4 }).map((_, i) => <OpportunityCardSkeleton key={i} />)}
@@ -1845,10 +1853,12 @@ function ProfileBody({ draft, onField, onToggleList, onAddCustom, onAddExperienc
   ];
   const strengthDone = strengthSections.filter((s) => s.done).length;
   const strengthPct = Math.round((strengthDone / strengthSections.length) * 100);
+  const profileScrollRef = useRef(null);
+  useContainerSmoothScroll(profileScrollRef);
 
   return (
     <div className="flex min-h-0 w-full flex-1 gap-5 overflow-hidden">
-    <div className="custom-scroll flex min-h-0 max-w-4xl flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden pb-4 pr-1">
+    <div ref={profileScrollRef} className="custom-scroll flex min-h-0 max-w-4xl flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden pb-4 pr-1">
       {/* About you */}
       <Panel className="shrink-0">
         <CardHead title="About you" sub="How you show up across the app" />
@@ -2089,9 +2099,30 @@ function AppShell({ view: initialView }) {
   const [profile, setProfile] = useState(null);
   const [user, setUser] = useState(null);
   const [profileDraft, setProfileDraft] = useState(() => normalizeProfile(null));
+  // Declared here (unconditionally, before this component's early
+  // `return`s for the loading/signed-out states) rather than down by
+  // `needsOnboarding` -- calling a hook after an early return changes
+  // the hook count between renders and throws "Rendered more hooks
+  // than during the previous render." `active` defaults to true, but
+  // that's harmless: the ref is null (no scoped Lenis instance created)
+  // until the onboarding wizard's own container actually mounts.
+  const onboardingScrollRef = useRef(null);
+  useContainerSmoothScroll(onboardingScrollRef);
   const [profileSaveState, setProfileSaveState] = useState('idle');
   const [profileSaveMessage, setProfileSaveMessage] = useState('');
   const [draftSyncedFor, setDraftSyncedFor] = useState(null);
+  // Career AI's four dashboards (Profile Analysis, Career Roadmap,
+  // Career Simulation, AI Coach) each fetch their own data as soon as
+  // they're mounted. Every other pane in this shell (Discover, Profile)
+  // stays permanently mounted from first render so switching tabs is
+  // instant -- but doing that here meant those four fetches fired on
+  // every login, regardless of whether the person ever opened Career AI
+  // at all. This flips to true the first time `view` actually becomes
+  // 'career-ai' (see the render-time check below) and then stays true,
+  // so the pane still mounts once and stays mounted for instant
+  // revisits after that -- it just doesn't mount before the tab has
+  // ever been opened.
+  const [careerAiVisited, setCareerAiVisited] = useState(false);
   // savedItems is the single source of truth for bookmarks (full opportunity
   // rows); savedIds is just a derived id-only Set for fast "is this card
   // saved?" lookups on cards outside the Saved tab. Keeping both in sync by
@@ -2453,6 +2484,10 @@ function AppShell({ view: initialView }) {
     setDraftSyncedFor(null);
   }
 
+  if (view === 'career-ai' && !careerAiVisited) {
+    setCareerAiVisited(true);
+  }
+
   const fullName = profile.fullName || user?.user_metadata?.full_name || user?.user_metadata?.name || profile.collegeName || 'Builder';
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
@@ -2678,9 +2713,18 @@ function AppShell({ view: initialView }) {
           <div className={`absolute inset-0 flex flex-col transform-gpu ${isDiscover ? 'z-10' : 'pointer-events-none opacity-0'}`}>
             <SidebarContentBodyMemo items={categories} sectionLabel="Categories" initialKey="programs" mode="opportunities" profile={profile} savedIds={savedIds} onToggleSaved={toggleSaved} appliedIds={appliedIds} onToggleApplied={toggleApplied} pendingAppliedIds={pendingAppliedIds} />
           </div>
-          <div className={`absolute inset-0 flex flex-col transform-gpu ${isCareerAi ? 'z-10' : 'pointer-events-none opacity-0'}`}>
-            <SidebarContentBodyMemo items={careerAiOptions} sectionLabel="Tools" initialKey="ai-coach" profile={profile} locked />
-          </div>
+          {/* Mounted lazily (see careerAiVisited above) rather than from
+              first render like Discover/Profile: those four dashboards each
+              fetch on mount, so mounting this eagerly meant every login
+              fired all four Career AI requests whether or not the person
+              ever opened the tab. Once visited once, it stays mounted (same
+              "keep every pane around" pattern as the rest of this file) so
+              switching back to Career AI afterward is still instant. */}
+          {careerAiVisited && (
+            <div className={`absolute inset-0 flex flex-col transform-gpu ${isCareerAi ? 'z-10' : 'pointer-events-none opacity-0'}`}>
+              <SidebarContentBodyMemo items={careerAiOptions} sectionLabel="Tools" initialKey="ai-coach" profile={profile} locked />
+            </div>
+          )}
           <div className={`absolute inset-0 flex flex-col transform-gpu ${isProfile ? 'z-10' : 'pointer-events-none opacity-0'}`}>
             {needsOnboarding ? (
               // First-time visitor, no profile row yet: the same step
@@ -2691,7 +2735,7 @@ function AppShell({ view: initialView }) {
               // this wrapper its content would just overflow the pane
               // rather than scroll within it). Its own Skip/Finish actions
               // already land on /discover, unchanged.
-              <div className="custom-scroll flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden">
+              <div ref={onboardingScrollRef} className="custom-scroll flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden">
                 <Suspense fallback={<PaneLoadingFallback />}>
                   <OnboardingScreen />
                 </Suspense>

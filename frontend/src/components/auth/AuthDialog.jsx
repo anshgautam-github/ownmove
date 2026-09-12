@@ -6,6 +6,7 @@ import {
   signInWithEmail,
   resolvePostAuthRedirect,
 } from '../../services/supabase/auth';
+import { getSmoothScroll } from '../../utils/smoothScroll';
 
 function GoogleIcon() {
   return (
@@ -70,6 +71,16 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
     };
     const previousHtmlOverflow = htmlStyle.overflow;
 
+    // Lenis still listens for wheel/touch input on the window while the
+    // body is pinned via `position: fixed` below, and would otherwise keep
+    // animating toward a scroll target the user can't see move -- so when
+    // the dialog finally closes and the real scroll position snaps back,
+    // Lenis's own tracked position is out of sync with it, which shows up
+    // as a visible jump/glitch right as the modal closes. Pausing it for
+    // the lifetime of the lock avoids that.
+    const lenis = getSmoothScroll();
+    lenis?.stop();
+
     htmlStyle.overflow = 'hidden';
     bodyStyle.overflow = 'hidden';
     bodyStyle.position = 'fixed';
@@ -83,6 +94,10 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
       bodyStyle.top = previousBodyStyles.top;
       bodyStyle.width = previousBodyStyles.width;
       window.scrollTo(0, scrollY);
+      // Restart only after the real scroll position is restored above, so
+      // Lenis picks back up from the correct spot rather than wherever it
+      // last thought it was before being paused.
+      lenis?.start();
     };
   }, []);
 

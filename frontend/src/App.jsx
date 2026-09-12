@@ -7,6 +7,8 @@ import LandingPage from './pages/LandingPage';
 import OnboardingScreen from './pages/OnboardingScreen';
 import AppShell from './pages/AppShell';
 import AuthCallbackScreen from './pages/AuthCallbackScreen';
+import { initSmoothScroll, destroySmoothScroll } from './utils/smoothScroll';
+import 'lenis/dist/lenis.css';
 
 const SHELL_ROUTES = {
   '/discover': 'discover',
@@ -17,6 +19,15 @@ const SHELL_ROUTES = {
 
 function App() {
   const pathname = useClientNavigation();
+
+  // Site-wide smooth/inertial scrolling. One instance for the whole app's
+  // lifetime (mounted here at the root so it covers every route), rather
+  // than per-page, since it wraps native window scroll globally regardless
+  // of which screen is showing.
+  useEffect(() => {
+    initSmoothScroll();
+    return () => destroySmoothScroll();
+  }, []);
 
   // Site-wide "disable image download" guard. Scoped to `e.target.tagName
   // === 'IMG'` only, so it never touches right-click/drag anywhere else on
