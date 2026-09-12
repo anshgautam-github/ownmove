@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+
+const MotionDiv = motion.div;
 import AuthDialog from '../auth/AuthDialog';
 import { supabase } from '../../services/supabase/client';
 
@@ -378,20 +380,38 @@ function HeroSection() {
           </div>
         </header>
 
-        {mobileNavOpen && (
-          <div className="mt-3 flex flex-col gap-1 rounded-2xl border border-white/60 bg-white/90 p-2.5 text-[15px] font-medium text-[#171321]/75 shadow-[0_20px_44px_rgba(23,19,33,0.12)] backdrop-blur-xl md:hidden">
-            <a href="#demo-section" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">Opportunities</a>
-            <a href="#how-it-works" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">How It Works</a>
-            <a href="#why-ownmove" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">About</a>
-            <a href="#faq" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">Contact</a>
-            <a href="#faq" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">FAQ</a>
-            {currentUser && (
-              <button type="button" onClick={() => { setMobileNavOpen(false); handleLogout(); }} className="rounded-xl px-3.5 py-2.5 text-left transition hover:bg-white hover:text-[#171321] sm:hidden">
-                Log out
-              </button>
-            )}
-          </div>
-        )}
+        {/* AnimatePresence lets the exit animation actually play -- a plain
+            `{mobileNavOpen && <div>...</div>}` unmounts the panel the
+            instant state flips, so it could only ever pop open/closed with
+            no way to animate the close. Animating `height` (rather than
+            just opacity/y) is what makes it slide open/shut instead of
+            fading in place, and `overflow-hidden` keeps the links from
+            poking out past the rounded corners mid-animation. */}
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <MotionDiv
+              key="mobile-nav"
+              initial={{ opacity: 0, height: 0, y: -6 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden md:hidden"
+            >
+              <div className="mt-3 flex flex-col gap-1 rounded-2xl border border-white/60 bg-white/90 p-2.5 text-[15px] font-medium text-[#171321]/75 shadow-[0_20px_44px_rgba(23,19,33,0.12)] backdrop-blur-xl">
+                <a href="#demo-section" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">Opportunities</a>
+                <a href="#how-it-works" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">How It Works</a>
+                <a href="#why-ownmove" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">About</a>
+                <a href="#faq" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">Contact</a>
+                <a href="#faq" onClick={() => setMobileNavOpen(false)} className="rounded-xl px-3.5 py-2.5 transition hover:bg-white hover:text-[#171321]">FAQ</a>
+                {currentUser && (
+                  <button type="button" onClick={() => { setMobileNavOpen(false); handleLogout(); }} className="rounded-xl px-3.5 py-2.5 text-left transition hover:bg-white hover:text-[#171321] sm:hidden">
+                    Log out
+                  </button>
+                )}
+              </div>
+            </MotionDiv>
+          )}
+        </AnimatePresence>
 
         <div className="grid flex-1 grid-cols-1 items-center gap-10 py-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:py-2">
           <div className="relative z-10 mx-auto max-w-[720px] text-center lg:mx-0 lg:pt-0 lg:text-left">
