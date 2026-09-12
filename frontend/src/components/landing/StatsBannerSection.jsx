@@ -15,14 +15,11 @@ const LaurelBranch = ({ flip }) => (
 )
 
 // Replaces the previous Apple/Play Store badges — those only make sense
-// for a mobile app listing. A star (top rating) and a medal (top ranking)
-// keep the same "award" visual language but read correctly for a website.
-const StarBadgeIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-[34px] h-[34px] mb-2">
-    <path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.6 1.1 6.5L12 16.9l-5.8 3.05 1.1-6.5-4.7-4.6 6.5-.95L12 2.5Z" />
-  </svg>
-)
-
+// for a mobile app listing. A medal (top ranking) keeps the same "award"
+// visual language but reads correctly for a website. The star badge that
+// used to sit above "TOP RATED" was removed at the user's request (text
+// only there now); MedalBadgeIcon below is unrelated and still used by
+// the "#1 CHOICE" badge.
 const MedalBadgeIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-[34px] h-[34px] mb-2">
     <circle cx="12" cy="14.5" r="6" />
@@ -113,7 +110,6 @@ function StatsBannerSection() {
         <div className="flex items-center gap-4">
            <LaurelBranch />
            <div className="flex flex-col items-center justify-center p-2">
-             <StarBadgeIcon />
              <div className="text-[1.05rem] font-bold tracking-tight leading-tight">TOP RATED</div>
              <div className="text-[0.8rem] opacity-75 mt-0.5">Career Platform</div>
            </div>
