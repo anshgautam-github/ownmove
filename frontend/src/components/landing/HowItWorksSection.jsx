@@ -28,13 +28,6 @@ async function goToDashboard(target) {
 
 const howItWorksCards = [
   {
-    title: 'Start with where you are.',
-    body:
-      'Add your goals, interests, skills, education, projects, and experience once. Your profile becomes the context behind everything OwnMove does for you.',
-    ui: 'profile',
-    cta: 'Build my profile',
-  },
-  {
     title: 'Discover opportunities that fit you.',
     body:
       'Explore internships, programs, fellowships, hackathons, open-source opportunities, events, and more based on your interests, skills, and goals.',
@@ -61,6 +54,13 @@ const howItWorksCards = [
       'Put two career moves side by side and understand their trade-offs based on your goals, current profile, and priorities.',
     ui: 'simulation',
     cta: 'Compare my options',
+  },
+  {
+    title: 'Start with where you are.',
+    body:
+      'Add your goals, interests, skills, education, projects, and experience once. Your profile becomes the context behind everything OwnMove does for you.',
+    ui: 'profile',
+    cta: 'Build my profile',
   },
 ]
 
