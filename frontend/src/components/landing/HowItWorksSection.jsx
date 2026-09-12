@@ -350,7 +350,18 @@ function HowItWorksSection() {
     measure()
     const raf = requestAnimationFrame(measure)
     window.addEventListener('resize', measure)
+
+    // Also re-measure once web fonts have actually finished loading and
+    // swapped in (see comment above this effect) -- on browsers without
+    // the Font Loading API this is simply skipped and the rAF/resize
+    // measurements above still apply.
+    let cancelled = false
+    document.fonts?.ready?.then(() => {
+      if (!cancelled) measure()
+    })
+
     return () => {
+      cancelled = true
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', measure)
     }
@@ -536,7 +547,14 @@ function HowItWorksSection() {
     measureCardHeights()
     const raf = requestAnimationFrame(measureCardHeights)
     window.addEventListener('resize', measureCardHeights)
+
+    let cancelled = false
+    document.fonts?.ready?.then(() => {
+      if (!cancelled) measureCardHeights()
+    })
+
     return () => {
+      cancelled = true
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', measureCardHeights)
     }
@@ -646,9 +664,6 @@ function HowItWorksSection() {
                 return (
                   <article
                     key={card.title}
-                    ref={(node) => {
-                      cardRefs.current[index] = node
-                    }}
                     // Full `inset-0` (not just `top`): an animated
                     // card has to stretch to fill the whole stage so it
                     // fully covers whatever's stacked beneath it -- a
@@ -663,6 +678,9 @@ function HowItWorksSection() {
                     style={canAnimate ? animatedStyle : undefined}
                   >
                     <div
+                      ref={(node) => {
+                        cardRefs.current[index] = node
+                      }}
                       className="how-neon-card rounded-[40px] bg-white px-5 py-5 shadow-[0_14px_42px_rgba(82,95,180,0.06)] transition-[transform,opacity,filter] duration-500 ease-out will-change-transform sm:px-12 sm:py-10"
                       // No overflow/scroll here on purpose (mobile or
                       // desktop): cardFitScale above already guarantees the
@@ -756,13 +774,15 @@ function HowItWorksSection() {
             {mobileExtendedCards.map((card, i) => (
               <div
                 key={i}
-                ref={(node) => {
-                  mobileCardRefs.current[i] = node
-                }}
                 className="shrink-0 px-1"
                 style={{ width: `${100 / mobileExtendedCards.length}%` }}
               >
-                <div className="how-neon-card rounded-[40px] bg-white px-5 py-5 shadow-[0_14px_42px_rgba(82,95,180,0.06)] sm:px-12 sm:py-10">
+                <div
+                  ref={(node) => {
+                    mobileCardRefs.current[i] = node
+                  }}
+                  className="how-neon-card rounded-[40px] bg-white px-5 py-5 shadow-[0_14px_42px_rgba(82,95,180,0.06)] sm:px-12 sm:py-10"
+                >
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
                       <h3 className="max-w-[440px] text-[1.7rem] font-medium leading-[1.05] tracking-[-0.03em] text-[#202b6d]">

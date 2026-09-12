@@ -301,9 +301,13 @@ function useTypewriterParagraphs(paragraphs, shouldStart, resetKey, speed = 22, 
   }
 }
 
+function MenuBarClock() {
+  const label = useMenuBarClock()
+  return <span className="hidden text-[10.5px] tabular-nums text-white/60 sm:inline">{label}</span>
+}
+
 function IntelligenceSection() {
   const sectionRef = useRef(null)
-  const menuBarClock = useMenuBarClock()
   const [hasStartedTyping, setHasStartedTyping] = useState(false)
   const [activeCategory, setActiveCategory] = useState('decide')
   // The mobile category switcher used to be a native <select> -- functional,
@@ -455,7 +459,7 @@ function IntelligenceSection() {
                     <ControlCenterGlyph className="hidden h-3 w-3 sm:block" />
                     <WifiGlyph className="h-3 w-3" />
                     <BatteryGlyph className="h-3.5 w-6" />
-                    <span className="hidden text-[10.5px] tabular-nums text-white/60 sm:inline">{menuBarClock}</span>
+                    <MenuBarClock />
                   </div>
                 </div>
 
