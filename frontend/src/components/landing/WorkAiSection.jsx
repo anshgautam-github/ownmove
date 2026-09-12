@@ -106,28 +106,43 @@ function WorkAiSection() {
                 built to absorb. Widening these on mobile (back down to the
                 original 58%/68% from sm up, where it's already verified to
                 look right) keeps captions on one line at narrow widths. */}
-            <div className="absolute right-[0%] top-[19%] w-[84%] sm:w-[58%] rotate-[0.6deg] rounded-[22px] border border-[#6771ff]/35 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(246,245,255,0.94)_100%)] backdrop-blur-md px-6 py-5 shadow-[0_16px_32px_rgba(75,87,255,0.16)] z-30">
+            <div className="absolute right-[0%] top-[19%] w-[88%] sm:w-[58%] rotate-[0.6deg] rounded-[22px] border border-[#6771ff]/35 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(246,245,255,0.94)_100%)] backdrop-blur-md px-6 py-5 shadow-[0_16px_32px_rgba(75,87,255,0.16)] z-30">
               <div className="flex items-center gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eef0ff] text-[#4651ff]">
                   {graphIcon}
                 </div>
-                <div className="text-[clamp(1.05rem,1.2vw,1.35rem)] font-semibold text-[#3340cf]">
+                {/* Fixed 12.5px below `sm` instead of the clamp(): at mobile
+                    widths this card's text column is only ~190px wide
+                    (84-88% of a ~360px container, minus padding and the
+                    icon), and the clamp()'s 1.05rem floor (~16.8px) made
+                    "Building your career graph" wrap to 2 lines -- which
+                    grew this card taller than the fixed top-[32%] the next
+                    card below assumes, so that card ended up starting
+                    underneath this one instead of after it. One line at
+                    12.5px fits the available width and keeps this card's
+                    height matching what the cards below were positioned
+                    for. */}
+                <div className="text-[12.5px] font-semibold text-[#3340cf] sm:text-[clamp(1.05rem,1.2vw,1.35rem)]">
                   Building your career graph
                 </div>
               </div>
             </div>
 
-            <div className="absolute right-[0%] top-[32%] w-[84%] sm:w-[58%] rounded-[22px] border border-white/80 bg-[linear-gradient(90deg,rgba(255,255,255,0.72),rgba(250,250,255,0.92))] px-6 py-4 shadow-[0_14px_26px_rgba(117,112,214,0.08)] z-20 scale-[0.96] origin-top translate-y-[-6px] backdrop-blur-sm">
+            <div className="absolute right-[0%] top-[34%] sm:top-[32%] w-[88%] sm:w-[58%] rounded-[22px] border border-white/80 bg-[linear-gradient(90deg,rgba(255,255,255,0.72),rgba(250,250,255,0.92))] px-6 py-4 shadow-[0_14px_26px_rgba(117,112,214,0.08)] z-20 scale-[0.96] origin-top translate-y-[-6px] backdrop-blur-sm">
               <div className="flex items-center gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eef0ff]/85 text-[#4651ff]">{scanIcon}</div>
-                <div className="text-[14.5px] font-semibold text-[#5157a8]">Matching signals to real roles</div>
+                {/* Same one-line-at-mobile-width fix as the card above, plus
+                    a couple points of extra top offset as a safety margin
+                    now that this card no longer needs to double as the
+                    thing hiding behind card 1. */}
+                <div className="text-[12px] font-semibold text-[#5157a8] sm:text-[14.5px]">Matching signals to real roles</div>
               </div>
             </div>
 
-            <div className="absolute right-[0%] top-[44%] w-[84%] sm:w-[58%] rounded-[22px] border border-white/50 bg-[linear-gradient(90deg,rgba(255,255,255,0.42),rgba(250,250,255,0.62))] px-6 py-4 shadow-[0_14px_26px_rgba(117,112,214,0.04)] z-10 scale-[0.92] origin-top translate-y-[-12px] backdrop-blur-[2px]">
+            <div className="absolute right-[0%] top-[47%] sm:top-[44%] w-[88%] sm:w-[58%] rounded-[22px] border border-white/50 bg-[linear-gradient(90deg,rgba(255,255,255,0.42),rgba(250,250,255,0.62))] px-6 py-4 shadow-[0_14px_26px_rgba(117,112,214,0.04)] z-10 scale-[0.92] origin-top translate-y-[-12px] backdrop-blur-[2px]">
               <div className="flex items-center gap-4 opacity-70">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eef0ff]/55 text-[#7880ff]">{routeIcon}</div>
-                <div className="text-[13.5px] font-semibold text-[#8288c2]">Charting the path ahead</div>
+                <div className="text-[11.5px] font-semibold text-[#8288c2] sm:text-[13.5px]">Charting the path ahead</div>
               </div>
             </div>
 
