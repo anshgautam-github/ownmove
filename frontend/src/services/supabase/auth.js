@@ -29,6 +29,12 @@ function friendlyAuthMessage(error) {
   if (/rate limit/i.test(message)) {
     return 'Too many attempts. Please wait a moment and try again.';
   }
+  if (/session missing|session not found|invalid.*refresh token|jwt expired/i.test(message)) {
+    return 'This reset link has expired or was already used. Please request a new one.';
+  }
+  if (/same password|different from the old password/i.test(message)) {
+    return 'Please choose a password different from your current one.';
+  }
   if (/password/i.test(message) && /(least|short|6)/i.test(message)) {
     return 'Password must be at least 6 characters.';
   }
@@ -88,6 +94,35 @@ export async function signInWithEmail({ email, password }) {
   }
 
   return { session: data.session };
+}
+
+// Kicks off the "forgot password" flow. Supabase deliberately returns no
+// error for an email that isn't registered (same anti-enumeration posture
+// as signUp), so the caller should always show a generic "check your inbox"
+// message regardless of whether this resolves or throws for a bad email --
+// it only throws for real failures (rate limiting, malformed input, etc).
+// The link Supabase emails the user back to redirectTo carries a one-time
+// recovery token; ResetPasswordScreen (mounted at that route) is what
+// exchanges it for a session and lets them set a new password.
+export async function sendPasswordResetEmail(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/auth/reset-password`,
+  });
+
+  if (error) {
+    throw new AuthError(friendlyAuthMessage(error));
+  }
+}
+
+// Called from ResetPasswordScreen once the recovery link has landed the
+// user in a (short-lived, recovery-only) Supabase session. Swaps in the new
+// password for the account tied to that session.
+export async function updatePassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+  if (error) {
+    throw new AuthError(friendlyAuthMessage(error));
+  }
 }
 
 // Same destination logic Google OAuth already uses via AuthCallbackScreen:

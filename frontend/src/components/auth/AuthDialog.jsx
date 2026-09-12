@@ -4,6 +4,7 @@ import {
   startGoogleSupabaseAuth,
   signUpWithEmail,
   signInWithEmail,
+  sendPasswordResetEmail,
   resolvePostAuthRedirect,
 } from '../../services/supabase/auth';
 import { getSmoothScroll } from '../../utils/smoothScroll';
@@ -58,6 +59,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   useEffect(() => {
     const scrollY = window.scrollY;
@@ -113,12 +115,27 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
     setFormMessage('');
     setFormError('');
     setNeedsEmailConfirmation(false);
+    setResetEmailSent(false);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setFormError('');
     setFormMessage('');
+
+    if (authMode === 'forgot') {
+      setIsSubmitting(true);
+      try {
+        await sendPasswordResetEmail(email);
+        setResetEmailSent(true);
+        setFormMessage("If an account exists for that email, we've sent a link to reset the password. Check your inbox (and spam folder).");
+      } catch (error) {
+        setFormError(error.message || 'Something went wrong. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (!acceptedTerms) {
       setFormError('Please accept the terms before continuing.');
@@ -199,15 +216,17 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
               <div className="relative z-10">
               <div className="text-center">
                 <div className="mx-auto mb-5 inline-flex items-center rounded-full border border-[#111827]/12 bg-white/60 px-4 py-2 text-sm font-medium text-black">
-                  {authMode === 'login' ? 'Welcome back' : 'New account'}
+                  {authMode === 'login' ? 'Welcome back' : authMode === 'signup' ? 'New account' : 'Reset password'}
                 </div>
                 <h2 className="text-[2rem] font-medium leading-none tracking-tight text-black">
-                  {authMode === 'login' ? 'Log in' : 'Sign up'}
+                  {authMode === 'login' ? 'Log in' : authMode === 'signup' ? 'Sign up' : 'Reset password'}
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-[#4B5563]">
                   {authMode === 'login'
                     ? 'Continue to your profile and career dashboard.'
-                    : 'Create your profile and start your onboarding.'}
+                    : authMode === 'signup'
+                    ? 'Create your profile and start your onboarding.'
+                    : "Enter your email and we'll send you a link to reset your password."}
                 </p>
               </div>
 
@@ -234,59 +253,81 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     required
-                    disabled={isSubmitting || needsEmailConfirmation}
+                    disabled={isSubmitting || needsEmailConfirmation || resetEmailSent}
                     className="h-12 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60"
                     placeholder="you@example.com"
                   />
                 </label>
 
-                <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#6B7280]">Password</span>
-                  <span className="relative block">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      required
-                      minLength={6}
-                      disabled={isSubmitting || needsEmailConfirmation}
-                      className="h-12 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 pr-12 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60"
-                      placeholder="Enter password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((shown) => !shown)}
-                      disabled={isSubmitting || needsEmailConfirmation}
-                      title={showPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#6B7280] transition hover:text-black disabled:opacity-60"
-                    >
-                      {showPassword ? <EyeIcon /> : <EyeSlashIcon />}
-                    </button>
-                  </span>
-                </label>
-
-                <div className="flex items-center justify-between pt-1">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={acceptedTerms}
-                      onChange={(event) => setAcceptedTerms(event.target.checked)}
-                      disabled={isSubmitting || needsEmailConfirmation}
-                      className="h-4 w-4 rounded border-[#111827]/18 accent-[#7b62e8]"
-                    />
-                    <span className="text-xs text-[#6B7280]">I agree to the terms</span>
+                {authMode !== 'forgot' && (
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-[#6B7280]">Password</span>
+                    <span className="relative block">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        required
+                        minLength={6}
+                        disabled={isSubmitting || needsEmailConfirmation}
+                        className="h-12 w-full rounded-full border border-[#111827]/10 bg-white/82 px-5 pr-12 text-sm text-black outline-none transition placeholder:text-[#9aa0aa] focus:border-black/35 focus:bg-white focus:shadow-[0_0_0_3px_rgba(17,24,39,0.05)] disabled:opacity-60"
+                        placeholder="Enter password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((shown) => !shown)}
+                        disabled={isSubmitting || needsEmailConfirmation}
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#6B7280] transition hover:text-black disabled:opacity-60"
+                      >
+                        {showPassword ? <EyeIcon /> : <EyeSlashIcon />}
+                      </button>
+                    </span>
                   </label>
-                  <button type="button" className="text-xs font-medium text-black underline underline-offset-2">
-                    Forgot?
-                  </button>
-                </div>
+                )}
+
+                {authMode !== 'forgot' && (
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(event) => setAcceptedTerms(event.target.checked)}
+                        disabled={isSubmitting || needsEmailConfirmation}
+                        className="h-4 w-4 rounded border-[#111827]/18 accent-[#7b62e8]"
+                      />
+                      <span className="text-xs text-[#6B7280]">
+                        I agree to the{' '}
+                        <a
+                          href="/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline underline-offset-2 hover:text-black"
+                        >
+                          terms
+                        </a>
+                      </span>
+                    </label>
+                    {authMode === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => switchAuthMode('forgot')}
+                        className="text-xs font-medium text-black underline underline-offset-2"
+                      >
+                        Forgot?
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || needsEmailConfirmation}
+                  disabled={isSubmitting || needsEmailConfirmation || resetEmailSent}
                   className="h-12 w-full cursor-pointer rounded-full bg-[linear-gradient(135deg,#7b62e8_0%,#5c63ff_100%)] text-sm font-semibold text-white shadow-[0_8px_20px_rgba(101,89,227,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(101,89,227,0.28)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                 >
-                  {isSubmitting
+                  {authMode === 'forgot'
+                    ? (isSubmitting ? 'Sending…' : resetEmailSent ? 'Link sent' : 'Send reset link')
+                    : isSubmitting
                     ? (authMode === 'login' ? 'Logging in…' : 'Creating account…')
                     : (authMode === 'login' ? 'Submit' : 'Create account')}
                 </button>
@@ -303,7 +344,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                 )}
               </form>
 
-              {!needsEmailConfirmation && (
+              {!needsEmailConfirmation && authMode !== 'forgot' && (
                 <>
                   <div className="my-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <span className="h-px bg-[#111827]/12" />
@@ -337,18 +378,29 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
 
             <div className="mt-4 flex items-center justify-between gap-4 px-1 text-xs text-[#6B7280]">
               <p>
-                {authMode === 'login' ? 'New User?' : 'Already have an account?'}{' '}
+                {authMode === 'forgot'
+                  ? 'Remembered your password?'
+                  : authMode === 'login'
+                  ? 'New User?'
+                  : 'Already have an account?'}{' '}
                 <button
                   type="button"
-                  onClick={() => switchAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                  onClick={() =>
+                    switchAuthMode(authMode === 'forgot' ? 'login' : authMode === 'login' ? 'signup' : 'login')
+                  }
                   className="text-black underline underline-offset-2"
                 >
-                  {authMode === 'login' ? 'Sign up' : 'Log in'}
+                  {authMode === 'forgot' ? 'Log in' : authMode === 'login' ? 'Sign up' : 'Log in'}
                 </button>
               </p>
-              <button type="button" className="text-black underline underline-offset-2">
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-black underline underline-offset-2"
+              >
                 Terms & Conditions
-              </button>
+              </a>
             </div>
           </div>
         </section>

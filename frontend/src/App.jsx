@@ -7,6 +7,8 @@ import LandingPage from './pages/LandingPage';
 import OnboardingScreen from './pages/OnboardingScreen';
 import AppShell from './pages/AppShell';
 import AuthCallbackScreen from './pages/AuthCallbackScreen';
+import ResetPasswordScreen from './pages/ResetPasswordScreen';
+import TermsScreen from './pages/TermsScreen';
 import { initSmoothScroll, destroySmoothScroll } from './utils/smoothScroll';
 import 'lenis/dist/lenis.css';
 
@@ -64,6 +66,10 @@ function App() {
     content = <AppShell view={SHELL_ROUTES[pathname]} />;
   } else if (pathname === '/auth/callback') {
     content = <AuthCallbackScreen />;
+  } else if (pathname === '/auth/reset-password') {
+    content = <ResetPasswordScreen />;
+  } else if (pathname === '/terms') {
+    content = <TermsScreen />;
   } else {
     const isOnboardingRoute =
       pathname === '/onboarding' || pathname.startsWith('/auth/');
