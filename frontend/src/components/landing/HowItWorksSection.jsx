@@ -513,6 +513,35 @@ function HowItWorksSection() {
     return undefined
   }, [mobileTrackAnimated])
 
+  // All 6 panels (5 cards + the looping duplicate) sit side by side in one
+  // flex row, and a flex row's default cross-axis behavior stretches every
+  // item to match the TALLEST one -- so a short card (like "Start with
+  // where you are") was being stretched to match whichever card is
+  // tallest overall ("Profile Analysis", with its 3 signal rows), leaving
+  // a big block of empty space below the short card's actual content
+  // before the dots. Measuring each panel's own natural height and sizing
+  // the viewport to just the CURRENTLY shown card's height removes that
+  // gap entirely and keeps it consistent card to card.
+  const mobileCardRefs = useRef([])
+  const [mobileCardHeights, setMobileCardHeights] = useState([])
+
+  useEffect(() => {
+    if (isDesktop) return undefined
+
+    const measureCardHeights = () => {
+      const heights = mobileCardRefs.current.map((node) => node?.offsetHeight ?? 0)
+      if (heights.some((h) => h > 0)) setMobileCardHeights(heights)
+    }
+
+    measureCardHeights()
+    const raf = requestAnimationFrame(measureCardHeights)
+    window.addEventListener('resize', measureCardHeights)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', measureCardHeights)
+    }
+  }, [isDesktop])
+
   return (
     <div className="floating-top-edge floating-top-edge-light relative z-20 -mt-12 rounded-t-[38px] shadow-[0_-24px_60px_rgba(82,95,180,0.08)] sm:-mt-16 sm:rounded-t-[52px]">
       <div className="floating-top-edge-cap pointer-events-none absolute inset-x-0 -top-12 z-10 h-24 sm:-top-14 sm:h-28" />
@@ -710,6 +739,10 @@ function HowItWorksSection() {
           onTouchStart={handleMobileTouchStart}
           onTouchMove={handleMobileTouchMove}
           onTouchEnd={handleMobileTouchEnd}
+          style={{
+            height: mobileCardHeights[mobileCardIndex] || undefined,
+            transition: mobileTrackAnimated ? 'height 0.35s ease' : 'none',
+          }}
         >
           <div
             className="flex"
@@ -723,6 +756,9 @@ function HowItWorksSection() {
             {mobileExtendedCards.map((card, i) => (
               <div
                 key={i}
+                ref={(node) => {
+                  mobileCardRefs.current[i] = node
+                }}
                 className="shrink-0 px-1"
                 style={{ width: `${100 / mobileExtendedCards.length}%` }}
               >
