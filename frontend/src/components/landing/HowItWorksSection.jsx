@@ -295,9 +295,17 @@ function HowItWorksSection() {
   }, [])
 
   useEffect(() => {
-    if (isDesktop) return undefined
-
     const measure = () => {
+      // Measured on both breakpoints now (previously desktop skipped this
+      // and just assumed a hardcoded 560px stage). That assumption is what
+      // was causing the unwanted internal scrollbar: whenever a card's real
+      // content came out even a few pixels taller than 560 (a longer title
+      // wrapping to 3 lines at some window widths, for example), the stage
+      // stayed at 560 while the card's own maxHeight+overflow:auto kicked
+      // in to "handle" the difference -- so the card looked basically
+      // fully visible but still got a scrollbar and a sliver of clipped
+      // content. Sizing the stage to the card's actual measured height
+      // removes the mismatch instead of papering over it.
       const heights = cardRefs.current.map((node) => node?.offsetHeight ?? 0)
       const tallest = Math.max(0, ...heights)
       if (tallest > 0) setMobileStageHeight(tallest)
@@ -305,7 +313,13 @@ function HowItWorksSection() {
       // How much vertical room the pinned frame has left for the stage,
       // after the heading block and the container's own top/bottom padding
       // -- read via getComputedStyle rather than hardcoded so it stays
-      // correct if the padding classes above ever change.
+      // correct if the padding classes above ever change. This now runs on
+      // desktop too: a short (or zoomed-out / small-laptop) browser window
+      // can leave less height than the hardcoded 560px stage assumes, and
+      // without this the pinned sticky frame's own overflow-hidden was
+      // silently clipping the bottom of every card -- e.g. the "Discover
+      // opportunities" card's list cut off mid-row with no way to scroll
+      // and see the rest.
       const stickyNode = stickyRef.current
       const containerNode = pinnedContainerRef.current
       const headingNode = headingRef.current
@@ -313,11 +327,18 @@ function HowItWorksSection() {
         const containerStyle = window.getComputedStyle(containerNode)
         const topPad = parseFloat(containerStyle.paddingTop) || 0
         const bottomPad = parseFloat(containerStyle.paddingBottom) || 0
-        const stageTopGap = 20 // matches the mobile-only marginTop override on
-                                // the stage wrapper below (mt-12/48px only
-                                // applies on desktop / before the pin kicks in).
+        // Matches the stage wrapper's marginTop above the stage: mt-12
+        // (48px) on desktop/before-pin, or the mobile-only 1.25rem (20px)
+        // inline override.
+        const stageTopGap = isDesktop ? 48 : 20
         const reserved = topPad + headingNode.offsetHeight + stageTopGap + bottomPad
-        const available = Math.max(stickyNode.clientHeight - reserved, 220)
+        // No artificial floor here: a floor bigger than the true leftover
+        // space would push (reserved + stage) past the sticky frame's own
+        // fixed height again -- the exact clipping bug this is fixing. And
+        // there's no internal scroll fallback anymore either -- in a
+        // genuinely too-short viewport the card can clip rather than gain
+        // a scrollbar, which is the tradeoff asked for here.
+        const available = Math.max(stickyNode.clientHeight - reserved, 0)
         setMobileAvailableHeight(available)
       }
     }
@@ -336,24 +357,36 @@ function HowItWorksSection() {
   }, [isDesktop])
 
   // The pin/crossfade only has a stage to animate within once we know how
-  // tall it should be: always true on desktop (fixed 560px), and on
-  // smaller screens only once mobileStageHeight has actually been measured.
-  const canAnimate = isDesktop || mobileStageHeight !== null
+  // tall it actually needs to be -- on both breakpoints now, once
+  // mobileStageHeight has been measured from the cards' real, unpositioned
+  // content height (see the measurement effect above).
+  const canAnimate = mobileStageHeight !== null
   // Never let the stage claim more height than the pinned frame actually
-  // has once the heading above it is accounted for -- a card taller than
-  // this still shows everything (including its CTA button), it just
-  // scrolls internally instead of being clipped by the stage's own
-  // overflow-hidden (see the how-neon-card style below).
-  const stageHeightPx = isDesktop
-    ? 560
-    : mobileAvailableHeight !== null
-      ? Math.min(mobileStageHeight, mobileAvailableHeight)
-      : mobileStageHeight
+  // has once the heading above it is accounted for.
+  const stageHeightPx = mobileAvailableHeight !== null
+    ? Math.min(mobileStageHeight, mobileAvailableHeight)
+    : mobileStageHeight
+
+  // No internal scrolling and no clipping, on any breakpoint: when the
+  // viewport doesn't have room for a card at its natural size, shrink the
+  // whole card uniformly instead so every card -- text, mockup, and the CTA
+  // button -- is always fully visible inside stageHeightPx. Same factor for
+  // every card (based on the tallest one, which is what mobileStageHeight
+  // already measures) so cards don't visibly change size relative to each
+  // other as they crossfade in and out; it's 1 (no-op) whenever the stage
+  // already has enough room, which is the common case on a normal window.
+  const cardFitScale =
+    mobileAvailableHeight !== null && mobileStageHeight > mobileAvailableHeight
+      ? mobileAvailableHeight / mobileStageHeight
+      : 1
 
   useEffect(() => {
     if (!canAnimate) return undefined
 
-    const updateProgress = () => {
+    let rafId = null
+
+    const computeProgress = () => {
+      rafId = null
       const node = sectionRef.current
       if (!node) return
 
@@ -364,15 +397,121 @@ function HowItWorksSection() {
       setProgress(nextProgress)
     }
 
-    updateProgress()
-    window.addEventListener('scroll', updateProgress, { passive: true })
-    window.addEventListener('resize', updateProgress)
+    // Coalesce every scroll/resize event that lands within the same frame
+    // into a single setState -- scroll events can fire far more often than
+    // the display can paint (fast trackpad flicks especially), so updating
+    // on every single one was doing multiple redundant re-renders per
+    // frame and showing up as stutter rather than a smooth crossfade.
+    const scheduleUpdate = () => {
+      if (rafId !== null) return
+      rafId = requestAnimationFrame(computeProgress)
+    }
+
+    computeProgress()
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
 
     return () => {
-      window.removeEventListener('scroll', updateProgress)
-      window.removeEventListener('resize', updateProgress)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
     }
   }, [canAnimate])
+
+  // --- Mobile: a swipeable carousel instead of the scroll-jacked pin/
+  // crossfade above. Desktop's version of this section works well as-is,
+  // so none of the above (canAnimate, stageHeightPx, cardFitScale, the
+  // scroll-progress effect) is touched -- it simply isn't used once we're
+  // rendering the mobile branch below. A duplicate of the first card is
+  // appended so swiping forward past the last real card can slide onto
+  // that duplicate and then snap back to index 0 with the transition
+  // switched off for one frame -- the duplicate looks identical to the
+  // real first card, so the snap is invisible and swiping forward again
+  // after the last card loops back to "show them starting" like a normal
+  // infinite carousel, without an actual reverse-direction slide.
+  const mobileExtendedCards = [...howItWorksCards, howItWorksCards[0]]
+  const [mobileCardIndex, setMobileCardIndex] = useState(0)
+  const [mobileTrackAnimated, setMobileTrackAnimated] = useState(true)
+  // How far (in px) the track has been dragged from the current card's
+  // resting position -- live-updated on every touchmove so the card visibly
+  // follows the finger during the gesture, instead of only reacting once
+  // the finger lifts.
+  const [mobileDragX, setMobileDragX] = useState(0)
+  const mobileTouchStartRef = useRef(null)
+
+  const handleMobileTouchStart = (e) => {
+    const touch = e.touches[0]
+    mobileTouchStartRef.current = { x: touch.clientX, y: touch.clientY }
+    // No transition while actively dragging -- the track should track the
+    // finger 1:1 with zero lag, not ease toward it.
+    setMobileTrackAnimated(false)
+    setMobileDragX(0)
+  }
+
+  const handleMobileTouchMove = (e) => {
+    const start = mobileTouchStartRef.current
+    if (!start) return
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - start.x
+    const deltaY = touch.clientY - start.y
+    // Only drag the card once the gesture is clearly horizontal -- if it's
+    // more vertical than horizontal this is a normal page scroll, and the
+    // card should stay put instead of jittering sideways.
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      setMobileDragX(deltaX)
+    }
+  }
+
+  const handleMobileTouchEnd = (e) => {
+    const start = mobileTouchStartRef.current
+    mobileTouchStartRef.current = null
+
+    // Whatever happens next (commit to a new card or snap back), it should
+    // animate smoothly from wherever the drag left off.
+    setMobileTrackAnimated(true)
+    setMobileDragX(0)
+    if (!start) return
+
+    const touch = e.changedTouches[0]
+    const deltaX = touch.clientX - start.x
+    const deltaY = touch.clientY - start.y
+
+    // Require a deliberate, mostly-horizontal drag -- otherwise this was
+    // just the user scrolling the page vertically, not swiping the card,
+    // and it snaps back to where it was (handled above by resetting
+    // mobileDragX with the transition back on).
+    const SWIPE_THRESHOLD = 45
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) < Math.abs(deltaY)) return
+
+    if (deltaX < 0) {
+      // Dragged right-to-left -> next card (loops via the appended
+      // duplicate, see handleMobileTrackTransitionEnd below).
+      setMobileCardIndex((i) => Math.min(i + 1, mobileExtendedCards.length - 1))
+    } else {
+      // Dragged left-to-right -> previous card. No backward loop -- this
+      // just stops at the first card, since only the forward loop was
+      // asked for.
+      setMobileCardIndex((i) => Math.max(i - 1, 0))
+    }
+  }
+
+  const handleMobileTrackTransitionEnd = () => {
+    if (mobileCardIndex === howItWorksCards.length) {
+      setMobileTrackAnimated(false)
+      setMobileCardIndex(0)
+    }
+  }
+
+  // Turns the transition back on one frame after the instant, invisible
+  // snap from the duplicate card back to index 0 -- otherwise every swipe
+  // after the first lap would also snap instantly instead of sliding.
+  useEffect(() => {
+    if (!mobileTrackAnimated) {
+      const raf = requestAnimationFrame(() => setMobileTrackAnimated(true))
+      return () => cancelAnimationFrame(raf)
+    }
+    return undefined
+  }, [mobileTrackAnimated])
 
   return (
     <div className="floating-top-edge floating-top-edge-light relative z-20 -mt-12 rounded-t-[38px] shadow-[0_-24px_60px_rgba(82,95,180,0.08)] sm:-mt-16 sm:rounded-t-[52px]">
@@ -380,6 +519,7 @@ function HowItWorksSection() {
       <div className="floating-top-edge-glow pointer-events-none absolute inset-x-0 top-0 z-10 h-20 sm:h-24" />
       <div className="floating-top-edge-sheen pointer-events-none absolute left-1/2 top-0 z-10 h-24 w-[68%] -translate-x-1/2 sm:h-28" />
 
+      {isDesktop ? (
       <section
         id="how-it-works"
         ref={sectionRef}
@@ -445,6 +585,7 @@ function HowItWorksSection() {
                   '--card-z': `${50 + index}`,
                   transform: `translate3d(0, ${translateY}%, 0) scale(${scale})`,
                   opacity,
+                  willChange: 'transform, opacity',
                   // Was `index === Math.floor(progress + 0.2)` -- only ever
                   // one card interactive at a time, and it handed
                   // interactivity to the *incoming* card a fifth of the way
@@ -494,51 +635,17 @@ function HowItWorksSection() {
                   >
                     <div
                       className="how-neon-card rounded-[40px] bg-white px-5 py-5 shadow-[0_14px_42px_rgba(82,95,180,0.06)] transition-[transform,opacity,filter] duration-500 ease-out will-change-transform sm:px-12 sm:py-10"
+                      // No overflow/scroll here on purpose (mobile or
+                      // desktop): cardFitScale above already guarantees the
+                      // card's natural height, scaled, fits inside
+                      // stageHeightPx, so there's nothing left to clip or
+                      // scroll -- the whole card, CTA button included, is
+                      // always on screen. `top center` keeps the shrink
+                      // anchored to where the card actually starts instead
+                      // of shrinking symmetrically from its middle.
                       style={
-                        canAnimate && !isDesktop
-                          ? {
-                              maxHeight: `${stageHeightPx}px`,
-                              overflowY: 'auto',
-                              WebkitOverflowScrolling: 'touch',
-                              // `contain` (the previous value here) keeps
-                              // the overscroll *glow/bounce* from leaking
-                              // out, but it also does something easy to
-                              // miss: it stops scroll CHAINING to the
-                              // window once the card hits its own
-                              // top/bottom boundary. On a normal page
-                              // that's usually what you want -- but this
-                              // card sits inside a scroll-jacked pinned
-                              // stack whose crossfade is driven entirely by
-                              // window scroll (see `updateProgress` above),
-                              // so trapping the gesture here meant that once
-                              // you scrolled the card's own content to the
-                              // end, the *same* continued drag couldn't
-                              // hand off to the window -- you had to lift
-                              // your finger and start a new gesture
-                              // somewhere off the card just to keep
-                              // scrolling the page. `auto` restores normal
-                              // chaining: the card scrolls internally first
-                              // (revealing the CTA), and once it's exhausted
-                              // the rest of the same gesture flows through
-                              // to the window, advancing the pin/crossfade
-                              // like everywhere else on the page.
-                              overscrollBehavior: 'auto',
-                              // Without this, a touch-drag that starts on the
-                              // card is ambiguous between "scroll my overflow
-                              // content" and "advance the pinned scroll-jack",
-                              // and mobile browsers tend to resolve that
-                              // ambiguity in favor of the outer/window
-                              // scroll, so the card's own overflow never
-                              // moves and a CTA below the fold stays
-                              // unreachable by touch. `pan-y` tells the
-                              // browser up front that this element owns
-                              // vertical panning gestures itself, so touch
-                              // scrolling here reliably scrolls the card --
-                              // and with `overscrollBehavior: 'auto'` above,
-                              // it still chains through to the window once
-                              // the card's own scroll is exhausted.
-                              touchAction: 'pan-y',
-                            }
+                        cardFitScale !== 1
+                          ? { transform: `scale(${cardFitScale})`, transformOrigin: 'top center' }
                           : undefined
                       }
                     >
@@ -575,6 +682,87 @@ function HowItWorksSection() {
           </div>
         </div>
       </section>
+      ) : (
+      <section
+        id="how-it-works"
+        className="relative bg-[linear-gradient(180deg,#ffffff_0%,#f7f7ff_100%)] px-6 pb-16 pt-16 text-[#1a215a] sm:px-10"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(127,116,255,0.08),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,247,255,0.98))]" />
+
+        <div className="relative mx-auto max-w-[760px] text-center">
+          <div className="text-[clamp(2rem,8.5vw,2.6rem)] font-medium leading-[0.94] tracking-[-0.07em] text-[#1c2565]">
+            <span className="block">Everything you need to</span>
+            <span className="block">make your next move.</span>
+          </div>
+          <p className="mx-auto mt-2 max-w-[640px] text-[0.92rem] leading-[1.4rem] text-[#8a90b5]">
+            Discover what fits, understand where you stand, and turn your goals into a clear path forward.
+          </p>
+        </div>
+
+        {/* Swipe viewport: overflow-hidden window plus the touch handlers
+            that read the gesture on release (handleMobileTouchEnd), not
+            live during the drag -- simple threshold-based swipe rather
+            than a finger-following drag, which is enough for "swipe right
+            to advance, loop after the last card" without needing to fight
+            the browser's own vertical page-scroll gesture mid-drag. */}
+        <div
+          className="relative mt-8 touch-pan-y select-none overflow-hidden"
+          onTouchStart={handleMobileTouchStart}
+          onTouchMove={handleMobileTouchMove}
+          onTouchEnd={handleMobileTouchEnd}
+        >
+          <div
+            className="flex"
+            style={{
+              width: `${mobileExtendedCards.length * 100}%`,
+              transform: `translateX(calc(-${(100 / mobileExtendedCards.length) * mobileCardIndex}% + ${mobileDragX}px))`,
+              transition: mobileTrackAnimated ? 'transform 0.45s ease' : 'none',
+            }}
+            onTransitionEnd={handleMobileTrackTransitionEnd}
+          >
+            {mobileExtendedCards.map((card, i) => (
+              <div
+                key={i}
+                className="shrink-0 px-1"
+                style={{ width: `${100 / mobileExtendedCards.length}%` }}
+              >
+                <div className="how-neon-card rounded-[40px] bg-white px-5 py-5 shadow-[0_14px_42px_rgba(82,95,180,0.06)] sm:px-12 sm:py-10">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <h3 className="max-w-[440px] text-[1.7rem] font-medium leading-[1.05] tracking-[-0.03em] text-[#202b6d]">
+                        {card.title}
+                      </h3>
+                      <p className="max-w-[420px] text-[0.95rem] leading-[1.55] text-[#8b92b5]">
+                        {card.body}
+                      </p>
+                    </div>
+
+                    <HowItWorksVisual type={card.ui} cta={card.cta} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative mt-2 flex items-center justify-center gap-2">
+          {howItWorksCards.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Show card ${i + 1}`}
+              onClick={() => {
+                setMobileTrackAnimated(true)
+                setMobileCardIndex(i)
+              }}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === mobileCardIndex % howItWorksCards.length ? 'w-6 bg-[#4c5cff]' : 'w-1.5 bg-[#d8dcfa]'
+              }`}
+            />
+          ))}
+        </div>
+      </section>
+      )}
     </div>
   )
 }

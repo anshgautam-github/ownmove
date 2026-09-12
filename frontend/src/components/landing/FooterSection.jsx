@@ -91,7 +91,13 @@ function FooterSection() {
               </div>
             </div>
 
-            <div className="footer-newsletter-card ml-auto w-full max-w-[640px] overflow-hidden rounded-[28px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,246,255,0.97))] px-5 py-5 text-[#19181f] shadow-[0_20px_60px_rgba(15,10,32,0.26)] sm:px-7 sm:py-7">
+            {/* Mobile-only ask: this white "Why OwnMove" card stays for
+                desktop (paired side-by-side with the recap text above at
+                `lg`) but is dropped below `lg` — on a phone it was just a
+                second, redundant restatement of the page's pitch stacked
+                under the same three recap lines, right before the page
+                ends. */}
+            <div className="footer-newsletter-card ml-auto hidden w-full max-w-[640px] overflow-hidden rounded-[28px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,246,255,0.97))] px-5 py-5 text-[#19181f] shadow-[0_20px_60px_rgba(15,10,32,0.26)] sm:px-7 sm:py-7 lg:block">
               {/* This card sits right next to the dark card's own layered
                   glow/beams and, by comparison, was just a flat white
                   rectangle — a quiet corner blob gives it a touch of the
