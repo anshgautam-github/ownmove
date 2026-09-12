@@ -5,6 +5,7 @@ import IntelligenceSection from '../components/landing/IntelligenceSection';
 import DemoSection from '../components/landing/DemoSection';
 import HowItWorksSection from '../components/landing/HowItWorksSection';
 import FounderSection from '../components/landing/FounderSection';
+import FloatingCompanyLogos from '../components/shared/FloatingCompanyLogos';
 import StatsBannerSection from '../components/landing/StatsBannerSection';
 import TestimonialSection from '../components/landing/TestimonialSection';
 import FaqSection from '../components/landing/FaqSection';
@@ -246,6 +247,13 @@ function FounderTrustSection() {
     <section id="why-ownmove" className="founder-stage relative overflow-hidden bg-[#ffffff] px-6 pb-20 pt-24 text-[#22242d] sm:px-10 sm:pb-24 sm:pt-28">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(120,140,255,0.03),transparent_35%),linear-gradient(180deg,#ffffff_0%,#fbfbfd_55%,#f3f6ff_100%)]" />
       <div className="founder-stage-glow pointer-events-none absolute left-1/2 top-[12%] h-[420px] w-[min(72vw,920px)] -translate-x-1/2 rounded-full" />
+      {/* Slightly lower opacity than the auth dialog's version (0.18 vs
+          0.22) -- this section sits on plain white rather than the auth
+          pages' cream/lavender gradient, where the same brand colors read
+          more starkly against the lighter ground. `position="absolute"`
+          scopes it to this <section> (already `relative overflow-hidden`
+          above) instead of the whole viewport. */}
+      <FloatingCompanyLogos position="absolute" opacity={0.18} />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1160px] flex-col items-center">
         <FounderSection />

@@ -25,11 +25,8 @@ function TermsScreen() {
     <main className="min-h-screen bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)] px-4 py-10 text-[#131114] sm:px-8">
       <div className="mx-auto max-w-[720px]">
         <div className="mb-8 flex items-center justify-between">
-          <a
-            href="/"
-            className="inline-flex items-center rounded-full border border-[#111827]/18 bg-white/55 px-6 py-3 text-lg font-medium tracking-tight text-black shadow-[0_10px_24px_rgba(17,24,39,0.04)]"
-          >
-            OwnMove
+          <a href="/" className="flex items-end">
+            <img src="/logo.svg" alt="OwnMove" className="h-11 w-auto" />
           </a>
           <a href="/" className="text-sm font-medium text-black underline underline-offset-2">
             Back

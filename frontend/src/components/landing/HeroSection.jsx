@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import AuthDialog from '../auth/AuthDialog';
 import { supabase } from '../../services/supabase/client';
 
@@ -465,9 +466,16 @@ function HeroSection() {
           </div>
         </footer>
       </div>
-      {authMode && (
-        <AuthDialog initialMode={authMode} onClose={() => setAuthMode(null)} />
-      )}
+      {/* AnimatePresence keeps AuthDialog mounted for the length of its own
+          exit animation (fade + scale-down) instead of yanking it out the
+          instant authMode goes back to null -- without this wrapper, the
+          dialog's `exit` animation defined in AuthDialog itself would never
+          get a chance to play. */}
+      <AnimatePresence>
+        {authMode && (
+          <AuthDialog key="auth-dialog" initialMode={authMode} onClose={() => setAuthMode(null)} />
+        )}
+      </AnimatePresence>
     </section>
   )
 }

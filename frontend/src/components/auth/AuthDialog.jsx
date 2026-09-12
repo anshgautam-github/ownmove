@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   startGoogleSupabaseAuth,
   signUpWithEmail,
@@ -8,6 +9,9 @@ import {
   resolvePostAuthRedirect,
 } from '../../services/supabase/auth';
 import { getSmoothScroll } from '../../utils/smoothScroll';
+import AuthBackgroundLogos from './AuthBackgroundLogos';
+
+const MotionDiv = motion.div;
 
 function GoogleIcon() {
   return (
@@ -174,6 +178,15 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
     }
   };
 
+  const heading =
+    authMode === 'login' ? 'Log in to OwnMove' : authMode === 'signup' ? 'Create your account' : 'Reset your password';
+  const subtitle =
+    authMode === 'login'
+      ? 'Continue to your profile and career dashboard.'
+      : authMode === 'signup'
+      ? 'Create your profile and start your onboarding.'
+      : "Enter your email and we'll send you a link to reset your password.";
+
   // Rendered via a portal straight onto <body>, not in normal JSX-parent
   // position: AuthDialog is opened from HeroSection, which on desktop lives
   // inside HeroWorkTransition's crossfade wrapper (LandingPage.jsx) --  an
@@ -189,48 +202,66 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
   // against the true viewport no matter where in the tree it's triggered
   // from or how far the page has scrolled.
   return createPortal(
-    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)] px-4 py-4 text-[#131114] sm:px-7 sm:py-6">
-      <div className="mx-auto flex min-h-full w-full max-w-[760px] flex-col">
-        {/* Sticky so the close button stays reachable even after the page
-            scrolls down into a tall form — without this, closing on a
-            short/keyboard-open viewport meant scrolling all the way back
-            up first. */}
-        <div className="sticky top-0 z-20 -mx-4 flex shrink-0 items-center justify-between bg-[#fffdf9]/85 px-4 py-1 backdrop-blur-md sm:-mx-7 sm:px-7">
-          <div className="inline-flex items-center rounded-full border border-[#111827]/18 bg-white/55 px-6 py-3 text-lg font-medium tracking-tight text-black shadow-[0_10px_24px_rgba(17,24,39,0.04)]">
-            OwnMove
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#111827]/10 bg-white/70 text-2xl font-light leading-none text-black shadow-[0_10px_24px_rgba(17,24,39,0.08)] transition hover:bg-white"
-            aria-label="Close auth dialog"
-          >
-            ×
-          </button>
-        </div>
+    <MotionDiv
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[linear-gradient(180deg,#fffdf9_0%,#fff8f2_42%,#f8f6ff_100%)] text-[#131114]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      <AuthBackgroundLogos />
 
-        <section className="flex min-h-0 flex-1 items-center justify-center py-6">
-          <div className="w-full max-w-[440px]">
-            <div className="relative overflow-hidden rounded-[28px] border border-[#111827]/10 bg-white/58 px-5 py-6 shadow-[0_24px_70px_rgba(96,86,176,0.1)] backdrop-blur-md sm:px-9 sm:py-7">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(255,224,187,0.28),transparent_32%),radial-gradient(circle_at_86%_8%,rgba(154,127,255,0.11),transparent_28%)]" />
-              <div className="relative z-10">
+      {/* Fixed (not sticky-in-flow) to the viewport itself, so it stays in
+          the same spot regardless of how far the form inside has scrolled --
+          simpler and more robust than the old sticky-header-bar approach,
+          and doesn't compete visually with the centered brand mark below. */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close auth dialog"
+        className="fixed right-4 top-4 z-30 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#111827]/10 bg-white/80 text-2xl font-light leading-none text-black shadow-[0_10px_24px_rgba(17,24,39,0.08)] backdrop-blur-md transition hover:bg-white sm:right-6 sm:top-6"
+      >
+        ×
+      </button>
+
+      <div className="flex min-h-full flex-col items-center justify-center px-4 py-16 sm:px-6">
+        {/* Real brand asset (public/logo.svg), same one used in the site
+            header (HeroSection.jsx) and app shell -- previously this was a
+            plain "OwnMove" text label standing in for it. */}
+        <a href="/" className="mb-8 inline-flex">
+          <img src="/logo.svg" alt="OwnMove" className="h-10 w-auto sm:h-11" />
+        </a>
+
+        <div className="w-full max-w-[420px]">
+          <MotionDiv
+            className="relative overflow-hidden rounded-[28px] border border-[#111827]/10 bg-white/60 px-6 py-8 shadow-[0_24px_70px_rgba(96,86,176,0.1)] backdrop-blur-md sm:px-9 sm:py-9"
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(255,224,187,0.28),transparent_32%),radial-gradient(circle_at_86%_8%,rgba(154,127,255,0.11),transparent_28%)]" />
+            {/* Keyed by authMode and cross-faded with AnimatePresence so
+                switching between log in / sign up / reset password slides
+                the new form in rather than snapping straight to it --
+                `initial={false}` skips this same animation on the dialog's
+                very first paint, since the card-level entrance above
+                already covers that moment. */}
+            <AnimatePresence mode="wait" initial={false}>
+              <MotionDiv
+                key={authMode}
+                className="relative z-10"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
               <div className="text-center">
-                <div className="mx-auto mb-5 inline-flex items-center rounded-full border border-[#111827]/12 bg-white/60 px-4 py-2 text-sm font-medium text-black">
-                  {authMode === 'login' ? 'Welcome back' : authMode === 'signup' ? 'New account' : 'Reset password'}
-                </div>
-                <h2 className="text-[2rem] font-medium leading-none tracking-tight text-black">
-                  {authMode === 'login' ? 'Log in' : authMode === 'signup' ? 'Sign up' : 'Reset password'}
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-[#4B5563]">
-                  {authMode === 'login'
-                    ? 'Continue to your profile and career dashboard.'
-                    : authMode === 'signup'
-                    ? 'Create your profile and start your onboarding.'
-                    : "Enter your email and we'll send you a link to reset your password."}
-                </p>
+                <h1 className="text-[1.7rem] font-semibold leading-tight tracking-tight text-black">{heading}</h1>
+                <p className="mt-2 text-sm leading-6 text-[#4B5563]">{subtitle}</p>
               </div>
 
-              <form className="mt-7 space-y-4" onSubmit={handleSubmit}>
+              <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
                 {authMode === 'signup' && (
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-[#6B7280]">Full name</span>
@@ -261,7 +292,18 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
 
                 {authMode !== 'forgot' && (
                   <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-[#6B7280]">Password</span>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm font-medium text-[#6B7280]">Password</span>
+                      {authMode === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => switchAuthMode('forgot')}
+                          className="text-xs font-medium text-black underline underline-offset-2"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
                     <span className="relative block">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -287,37 +329,24 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                 )}
 
                 {authMode !== 'forgot' && (
-                  <div className="flex items-center justify-between pt-1">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={acceptedTerms}
-                        onChange={(event) => setAcceptedTerms(event.target.checked)}
-                        disabled={isSubmitting || needsEmailConfirmation}
-                        className="h-4 w-4 rounded border-[#111827]/18 accent-[#7b62e8]"
-                      />
-                      <span className="text-xs text-[#6B7280]">
-                        I agree to the{' '}
-                        <a
-                          href="/terms"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline underline-offset-2 hover:text-black"
-                        >
-                          terms
-                        </a>
-                      </span>
-                    </label>
-                    {authMode === 'login' && (
-                      <button
-                        type="button"
-                        onClick={() => switchAuthMode('forgot')}
-                        className="text-xs font-medium text-black underline underline-offset-2"
+                  <label className="flex items-start gap-2 pt-1">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(event) => setAcceptedTerms(event.target.checked)}
+                      disabled={isSubmitting || needsEmailConfirmation}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#111827]/18 accent-[#7b62e8]"
+                    />
+                    <span className="text-xs leading-5 text-[#6B7280]">
+                      I agree to the{' '}
+                      <a
+                        href="/terms"
+                        className="font-medium text-black underline underline-offset-2"
                       >
-                        Forgot?
-                      </button>
-                    )}
-                  </div>
+                        Terms & Conditions
+                      </a>
+                    </span>
+                  </label>
                 )}
 
                 <button
@@ -329,7 +358,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                     ? (isSubmitting ? 'Sending…' : resetEmailSent ? 'Link sent' : 'Send reset link')
                     : isSubmitting
                     ? (authMode === 'login' ? 'Logging in…' : 'Creating account…')
-                    : (authMode === 'login' ? 'Submit' : 'Create account')}
+                    : (authMode === 'login' ? 'Log in' : 'Create account')}
                 </button>
 
                 {formError && (
@@ -346,7 +375,7 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
 
               {!needsEmailConfirmation && authMode !== 'forgot' && (
                 <>
-                  <div className="my-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                  <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <span className="h-px bg-[#111827]/12" />
                     <span className="text-xs font-medium text-[#8b929d]">or continue with</span>
                     <span className="h-px bg-[#111827]/12" />
@@ -373,39 +402,34 @@ function AuthDialog({ onClose, initialMode = 'login' }) {
                   )}
                 </>
               )}
-            </div>
-            </div>
 
-            <div className="mt-4 flex items-center justify-between gap-4 px-1 text-xs text-[#6B7280]">
-              <p>
+              {/* Single mode-toggle line, centered inside the card just like
+                  the rest of the form -- previously this (and a second,
+                  redundant Terms & Conditions link) lived outside the card
+                  in a two-column row that read as misaligned/disconnected
+                  from the form above it. */}
+              <p className="mt-7 text-center text-sm text-[#6B7280]">
                 {authMode === 'forgot'
                   ? 'Remembered your password?'
                   : authMode === 'login'
-                  ? 'New User?'
+                  ? "Don't have an account?"
                   : 'Already have an account?'}{' '}
                 <button
                   type="button"
                   onClick={() =>
                     switchAuthMode(authMode === 'forgot' ? 'login' : authMode === 'login' ? 'signup' : 'login')
                   }
-                  className="text-black underline underline-offset-2"
+                  className="font-medium text-black underline underline-offset-2"
                 >
                   {authMode === 'forgot' ? 'Log in' : authMode === 'login' ? 'Sign up' : 'Log in'}
                 </button>
               </p>
-              <a
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-black underline underline-offset-2"
-              >
-                Terms & Conditions
-              </a>
-            </div>
-          </div>
-        </section>
+              </MotionDiv>
+            </AnimatePresence>
+          </MotionDiv>
+        </div>
       </div>
-    </div>,
+    </MotionDiv>,
     document.body
   );
 }
