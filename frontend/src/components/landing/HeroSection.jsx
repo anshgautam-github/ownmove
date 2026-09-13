@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 const MotionDiv = motion.div;
 import AuthDialog from '../auth/AuthDialog';
 import { supabase } from '../../services/supabase/client';
-import { safeRemoveItem } from '../../utils/safeStorage';
+import { safeGetItem, safeRemoveItem } from '../../utils/safeStorage';
 
 // What OwnMove actually surfaces — not a company-logo wall, since the
 // company logos already live in the orbit visual to the right. This
@@ -245,6 +245,16 @@ function OrbitVisual() {
 function HeroSection() {
   const [authMode, setAuthMode] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  // Logging out used to be instant and silent -- signOut() resolves,
+  // the onAuthStateChange listener below flips currentUser to null, and
+  // the header swaps to "Join Now" in the same tick, with nothing to
+  // show anyone the click actually did something. `isSigningOut` holds a
+  // deliberate "Signing out..." state in the header for a beat (even
+  // though the real auth state already changed underneath it) so the
+  // transition reads as an intentional action, and `showSignedOutToast`
+  // puts a brief confirmation on screen once it settles.
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showSignedOutToast, setShowSignedOutToast] = useState(false);
   // The nav links were `hidden md:flex` with no fallback at all below that
   // breakpoint — on any phone or small tablet, "Opportunities / How It
   // Works / About / Contact / FAQ" simply didn't exist anywhere on the
@@ -277,6 +287,22 @@ function HeroSection() {
     return () => window.removeEventListener('open-auth', handleOpenAuth);
   }, []);
 
+  // Logging out from inside the app (AppShell's account menu) does a hard
+  // navigation back to '/' -- this picks up the flag it leaves behind so
+  // the same "You've been signed out" confirmation shows up here too,
+  // instead of the confirmation only existing on the landing page's own
+  // Log out button. Wrapped in an async IIFE (matching the mobile-welcome
+  // effect in AppShell) so the eventual setState isn't called directly at
+  // the top of the effect body.
+  useEffect(() => {
+    (async () => {
+      if (!safeGetItem('justSignedOut')) return;
+      safeRemoveItem('justSignedOut');
+      setShowSignedOutToast(true);
+      window.setTimeout(() => setShowSignedOutToast(false), 2200);
+    })();
+  }, []);
+
   // There's no standalone "/dashboard" route in the app anymore (only
   // /discover, /career-ai, /profile, /saved exist — see App.jsx's
   // SHELL_ROUTES) — that URL just silently falls through to the landing
@@ -284,8 +310,18 @@ function HeroSection() {
   const goToDiscover = () => window.location.assign('/discover');
 
   const handleLogout = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
     await supabase.auth.signOut();
-    setCurrentUser(null);
+    // onAuthStateChange (below) already flips currentUser to null as
+    // soon as signOut() resolves -- hold the "Signing out..." state
+    // visible a little longer than that so the header doesn't just
+    // blink between states, then show a short confirmation toast.
+    window.setTimeout(() => {
+      setIsSigningOut(false);
+      setShowSignedOutToast(true);
+      window.setTimeout(() => setShowSignedOutToast(false), 2200);
+    }, 500);
   };
 
   return (
@@ -295,6 +331,27 @@ function HeroSection() {
           dropping down to violet-black. */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(128deg,#fdf3e0_0%,#f6e6d6_9%,#f0ddf0_20%,#ddc8f2_36%,#cdbdf0_52%,#dfe1f5_72%,#f5f6fb_88%,#ffffff_100%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_78%_38%,rgba(123,98,232,0.08),transparent_60%)]" />
+
+      {/* Confirmation toast for logging out -- see handleLogout/isSigningOut
+          above. Fixed (not absolute) so it stays put regardless of scroll
+          position on this long landing page. */}
+      <AnimatePresence>
+        {showSignedOutToast && (
+          <MotionDiv
+            key="signed-out-toast"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="pointer-events-none fixed inset-x-0 top-6 z-[200] flex justify-center px-4"
+          >
+            <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/70 bg-white/95 px-5 py-2.5 text-sm font-semibold text-[#171321] shadow-[0_18px_44px_rgba(23,19,33,0.18)] backdrop-blur-xl">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-[#5c63ff]"><path d="M20 6 9 17l-5-5" /></svg>
+              You've been signed out
+            </div>
+          </MotionDiv>
+        )}
+      </AnimatePresence>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1380px] flex-col px-6 pb-6 pt-6 sm:px-10 lg:px-12">
         <header className="flex items-end justify-between gap-6">
@@ -352,35 +409,64 @@ function HeroSection() {
               )}
             </button>
 
-            {currentUser ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="hidden text-sm font-medium text-[#171321]/60 transition hover:text-[#171321] sm:inline"
+            <AnimatePresence mode="wait">
+              {isSigningOut ? (
+                <MotionDiv
+                  key="signing-out"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-[#171321]/60"
                 >
-                  Log out
-                </button>
-                <button
-                  type="button"
-                  onClick={goToDiscover}
-                  className="premium-glass-cta items-center rounded-full px-6 py-3 text-sm font-semibold"
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="animate-spin"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
+                  Signing out…
+                </MotionDiv>
+              ) : currentUser ? (
+                <MotionDiv
+                  key="logged-in"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex items-center gap-3"
                 >
-                  <span className="relative z-10">Discover</span>
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  safeRemoveItem('postLoginRedirect');
-                  setAuthMode('signup');
-                }}
-                className="premium-glass-cta items-center rounded-full px-6 py-3 text-sm font-semibold"
-              >
-                <span className="relative z-10">Join Now</span>
-              </button>
-            )}
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="hidden text-sm font-medium text-[#171321]/60 transition hover:text-[#171321] sm:inline"
+                  >
+                    Log out
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToDiscover}
+                    className="premium-glass-cta items-center rounded-full px-6 py-3 text-sm font-semibold"
+                  >
+                    <span className="relative z-10">Discover</span>
+                  </button>
+                </MotionDiv>
+              ) : (
+                <MotionDiv
+                  key="logged-out"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      safeRemoveItem('postLoginRedirect');
+                      setAuthMode('signup');
+                    }}
+                    className="premium-glass-cta items-center rounded-full px-6 py-3 text-sm font-semibold"
+                  >
+                    <span className="relative z-10">Join Now</span>
+                  </button>
+                </MotionDiv>
+              )}
+            </AnimatePresence>
           </div>
         </header>
 

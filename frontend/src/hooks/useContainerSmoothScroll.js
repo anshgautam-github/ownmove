@@ -47,7 +47,27 @@ export function useContainerSmoothScroll(ref, { active = true, depKey } = {}) {
       allowNestedScroll: true,
     });
 
-    return () => instance.destroy();
+    // Lenis only recomputes its scroll limit when a built-in
+    // ResizeObserver sees `node`'s OWN box change size (see lenis's
+    // Dimensions class). `node` has a fixed height from flex layout, so
+    // its box never changes as children mount/unmount -- it only ever
+    // grows via overflow. That means if this instance is created before
+    // async content (e.g. the opportunities list) has finished loading,
+    // Lenis caches a scroll limit of ~0 and never learns better, silently
+    // blocking all scroll in this panel until something else forces a
+    // fresh measurement (which is why a hard refresh -- often hitting a
+    // warm cache that renders synchronously -- "fixes" it while simply
+    // navigating here does not). Watch for DOM mutations inside the
+    // container and force Lenis to remeasure whenever content is
+    // actually added or removed.
+    const remeasure = () => instance.resize();
+    const observer = new MutationObserver(remeasure);
+    observer.observe(node, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      instance.destroy();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, active, depKey]);
 }

@@ -1,10 +1,13 @@
 import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+const MotionDiv = motion.div;
 import { loadOnboardingProfile, saveOnboardingProfile, uploadResume, getResumeSignedUrl, validateResumeFile } from '../services/supabase/profiles';
 import { loadOpportunities } from '../services/supabase/opportunities';
 import { loadForYouRecommendations } from '../services/api/recommendations';
 import { loadSavedOpportunities, saveOpportunity, unsaveOpportunity } from '../services/supabase/savedOpportunities';
 import { loadAppliedOpportunityIds, markOpportunityApplied, unmarkOpportunityApplied } from '../services/supabase/opportunityApplications';
 import { supabase } from '../services/supabase/client';
+import { safeSetItem } from '../utils/safeStorage';
 import { getCache, setCache, setCacheScope } from '../services/api/localCache';
 import CertificationsCatalog from '../components/certifications/CertificationsCatalog';
 import { useContainerSmoothScroll } from '../hooks/useContainerSmoothScroll';
@@ -2163,6 +2166,11 @@ function AppShell({ view: initialView }) {
   // default, toggled on click, dismissed on an outside click or Escape.
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
+  // Logging out used to close the menu and swap to the homepage in the
+  // same tick. This holds the dropdown open on a "Signing out..."
+  // confirmation for a beat first, so the action reads as deliberate
+  // instead of the page just vanishing underneath the click.
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   // Follow external navigation (in-content links that change the route prop).
   if (initialView !== syncedInitial) {
@@ -2173,11 +2181,13 @@ function AppShell({ view: initialView }) {
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
     const onPointerDown = (event) => {
+      if (isSigningOut) return;
       if (accountMenuRef.current && !accountMenuRef.current.contains(event.target)) {
         setAccountMenuOpen(false);
       }
     };
     const onKeyDown = (event) => {
+      if (isSigningOut) return;
       if (event.key === 'Escape') setAccountMenuOpen(false);
     };
     document.addEventListener('mousedown', onPointerDown);
@@ -2186,7 +2196,7 @@ function AppShell({ view: initialView }) {
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [accountMenuOpen]);
+  }, [accountMenuOpen, isSigningOut]);
 
   // Phone-only "we recommend desktop" welcome popup. Gated on `status ===
   // 'ready'` so it only ever fires post-login (the loading/signed-out
@@ -2448,10 +2458,19 @@ function AppShell({ view: initialView }) {
   };
 
   const handleLogout = async () => {
-    setAccountMenuOpen(false);
+    if (isSigningOut) return;
+    setIsSigningOut(true);
     setCacheScope(null);
     await supabase.auth.signOut();
-    window.location.assign('/');
+    // Picked up by HeroSection's own "You've been signed out" toast so
+    // the confirmation carries across this full-page navigation back to
+    // '/' instead of just disappearing with this dropdown.
+    safeSetItem('justSignedOut', '1');
+    // Give the "Signing out..." state a moment to actually register
+    // before leaving for the homepage.
+    window.setTimeout(() => {
+      window.location.assign('/');
+    }, 700);
   };
 
   if (status === 'loading') return (
@@ -2638,35 +2657,60 @@ function AppShell({ view: initialView }) {
               >
                 {avatarUrl ? <img src={avatarUrl} alt={fullName} className="h-9 w-9 rounded-full object-cover ring-2 ring-white" /> : <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#161616] text-xs font-black text-white">{fullName.charAt(0).toUpperCase()}</div>}
               </button>
-              {accountMenuOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-[calc(100%+10px)] z-50 w-56 overflow-hidden rounded-[18px] border border-white/70 bg-white/95 py-1.5 shadow-[0_20px_48px_-16px_rgba(40,50,30,0.35)] backdrop-blur-xl"
-                >
-                  <div className="border-b border-black/5 px-4 py-3">
-                    <p className="truncate text-[13px] font-black text-[#1a1a1a]">{fullName}</p>
-                    {user?.email && <p className="truncate text-[11.5px] font-medium text-[#9a9a97]">{user.email}</p>}
-                  </div>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => { setAccountMenuOpen(false); goToView('profile'); }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-bold text-[#3a3a38] transition hover:bg-black/5"
+              <AnimatePresence>
+                {accountMenuOpen && (
+                  <MotionDiv
+                    key="account-menu"
+                    role="menu"
+                    initial={{ opacity: 0, scale: 0.96, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -6 }}
+                    transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute right-0 top-[calc(100%+10px)] z-50 w-56 overflow-hidden rounded-[18px] border border-white/70 bg-white/95 shadow-[0_20px_48px_-16px_rgba(40,50,30,0.35)] backdrop-blur-xl"
                   >
-                    {icons.user}
-                    Profile
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-bold text-[#b34747] transition hover:bg-[#fdf2f2]"
-                  >
-                    {icons.logout}
-                    Logout
-                  </button>
-                </div>
-              )}
+                    <AnimatePresence mode="wait">
+                      {isSigningOut ? (
+                        <MotionDiv
+                          key="signing-out"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="flex flex-col items-center gap-3 px-4 py-9 text-center"
+                        >
+                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="animate-spin text-[#9a9a97]"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
+                          <p className="text-[13px] font-bold text-[#3a3a38]">Signing out…</p>
+                        </MotionDiv>
+                      ) : (
+                        <MotionDiv key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }} className="py-1.5">
+                          <div className="border-b border-black/5 px-4 py-3">
+                            <p className="truncate text-[13px] font-black text-[#1a1a1a]">{fullName}</p>
+                            {user?.email && <p className="truncate text-[11.5px] font-medium text-[#9a9a97]">{user.email}</p>}
+                          </div>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => { setAccountMenuOpen(false); goToView('profile'); }}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-bold text-[#3a3a38] transition hover:bg-black/5"
+                          >
+                            {icons.user}
+                            Profile
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={handleLogout}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-bold text-[#b34747] transition hover:bg-[#fdf2f2]"
+                          >
+                            {icons.logout}
+                            Logout
+                          </button>
+                        </MotionDiv>
+                      )}
+                    </AnimatePresence>
+                  </MotionDiv>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
