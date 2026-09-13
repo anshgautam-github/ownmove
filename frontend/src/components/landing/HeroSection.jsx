@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 const MotionDiv = motion.div;
 import AuthDialog from '../auth/AuthDialog';
 import { supabase } from '../../services/supabase/client';
+import { safeRemoveItem } from '../../utils/safeStorage';
 
 // What OwnMove actually surfaces — not a company-logo wall, since the
 // company logos already live in the orbit visual to the right. This
@@ -371,7 +372,10 @@ function HeroSection() {
             ) : (
               <button
                 type="button"
-                onClick={() => setAuthMode('signup')}
+                onClick={() => {
+                  safeRemoveItem('postLoginRedirect');
+                  setAuthMode('signup');
+                }}
                 className="premium-glass-cta items-center rounded-full px-6 py-3 text-sm font-semibold"
               >
                 <span className="relative z-10">Join Now</span>
